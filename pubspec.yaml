@@ -1,0 +1,55 @@
+name: switchon_diet
+description: "28-day Switch-On Diet challenge tracker with meal-window timing, fasting timer and a Claude-powered AI coach."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Local database
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Notifications
+  flutter_local_notifications: ^18.0.1
+
+  # HTTP
+  http: ^1.6.0
+
+  # Timezone
+  timezone: ^0.9.4
+
+  # Internationalization
+  intl: ^0.20.2
+
+  # Path provider for Hive
+  path_provider: ^2.1.4
+
+  # Environment variables
+  flutter_dotenv: ^5.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+  # Hive code generation
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.12
+
+flutter:
+  uses-material-design: true
+
+  # `.env` is gitignored; create it from `.env.example` before building.
+  assets:
+    - .env

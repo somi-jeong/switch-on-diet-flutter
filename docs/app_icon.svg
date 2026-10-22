@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- 다크 그린 배경 -->
+  <rect width="1024" height="1024" fill="#1F2A24" rx="180"/>
+
+  <!-- 미드 그린 원 (흰색 대신 더 진한 초록색) -->
+  <circle cx="512" cy="512" r="340" fill="#2F8F63"/>
+
+  <!-- "S" 텍스트 (라이트 그린으로) -->
+  <text x="512" y="680" font-family="Helvetica, Arial, sans-serif" font-size="520" font-weight="bold" fill="#B8EB82" text-anchor="middle">S</text>
+
+  <!-- 작은 점 (라이트 그린) -->
+  <circle cx="512" cy="280" r="30" fill="#B8EB82"/>
+</svg>

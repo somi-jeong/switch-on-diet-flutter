@@ -1,0 +1,109 @@
+{
+  // 🎯 Switch On Diet - VS Code 자동화 설정
+  // 80자 제한, 자동 포맷팅, 실시간 에러 체크
+
+  // ============================================================
+  // Dart & Flutter 포맷팅
+  // ============================================================
+  "[dart]": {
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.rulers": [80],
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "editor.wordWrap": "off",
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+
+  // ============================================================
+  // Dart 설정
+  // ============================================================
+  "dart.lineLength": 80,
+  "dart.enableSdkFormatter": true,
+  "dart.insertArgumentPlaceholders": false,
+  "dart.previewFlutterUiGuides": true,
+  "dart.previewFlutterUiGuidesCustomTracking": true,
+  "dart.showTodos": true,
+  "dart.debugExternalPackageLibraries": false,
+  "dart.debugSdkLibraries": false,
+
+  // ============================================================
+  // 실시간 에러 체크
+  // ============================================================
+  "dart.analysisServerFoldingOnly": false,
+  "dart.showIgnoreQuickFixes": false,
+  "dart.showTestCodeLens": true,
+  "dart.showMainCodeLens": true,
+
+  // ============================================================
+  // 에디터 설정
+  // ============================================================
+  "editor.rulers": [80, 120],
+  "editor.wordWrapColumn": 80,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+  "editor.minimap.enabled": true,
+  "editor.minimap.maxColumn": 80,
+
+  // 자동 저장 및 포맷팅
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+
+  // ============================================================
+  // Git 통합
+  // ============================================================
+  "git.enableSmartCommit": false,
+  "git.confirmSync": false,
+
+  // ============================================================
+  // 파일 제외
+  // ============================================================
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/*.g.dart": true,
+    "**/*.freezed.dart": true,
+    "**/build": true
+  },
+
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/.hg/store/**": true,
+    "**/build/**": true
+  },
+
+  // ============================================================
+  // 검색 제외
+  // ============================================================
+  "search.exclude": {
+    "**/.git": true,
+    "**/build": true,
+    "**/*.g.dart": true,
+    "**/*.freezed.dart": true,
+    "**/ios/Pods": true,
+    "**/ios/.symlinks": true,
+    "**/android/.gradle": true
+  },
+
+  // ============================================================
+  // 코드 품질 알림
+  // ============================================================
+  "problems.showCurrentInStatus": true,
+  "problems.sortOrder": "severity",
+
+  // ============================================================
+  // Flutter 특화 설정
+  // ============================================================
+  "flutter-tree.enabled": true
+}
