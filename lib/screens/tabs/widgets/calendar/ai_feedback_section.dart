@@ -125,9 +125,7 @@ class AiFeedbackSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.only(top: 12),
               decoration: const BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Color(0x0D000000), width: 1),
-                ),
+                border: Border(top: BorderSide(color: Color(0x0D000000))),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,10 +151,7 @@ class AiFeedbackSection extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: const Color(0xFFE2E8F0),
-                            width: 1,
-                          ),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
                         ),
                         child: Text(
                           rule,

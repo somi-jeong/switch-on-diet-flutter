@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-import 'meal_record.dart';
+import 'package:switchon_diet/models/meal_record.dart';
 
 part 'diet_record.g.dart';
 

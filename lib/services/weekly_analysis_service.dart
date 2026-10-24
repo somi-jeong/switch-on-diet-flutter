@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/models/diet_record.dart';
+import 'package:switchon_diet/services/claude_service.dart';
 import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
-import 'package:switchon_diet/services/claude_service.dart';
 
 class WeeklyAnalysisService {
   /// Checks if today is the last day of a week (7, 14, 21, or 28)
@@ -54,7 +54,7 @@ class WeeklyAnalysisService {
         if (record != null) {
           // Detect late recording pattern (recordedAt and eatenAt differ by 2+ hours)
           final lateRecordings = <String>[];
-          for (var meal in record.meals) {
+          for (final meal in record.meals) {
             if (meal.recordedAt != null &&
                 meal.recordedAt!.isNotEmpty &&
                 meal.eatenAt != null &&
@@ -142,7 +142,7 @@ class WeeklyAnalysisService {
         record.weeklySummary = summary;
       }
 
-      StorageService.saveRecord(record, todayIdx);
+      await StorageService.saveRecord(record, todayIdx);
       debugPrint('Weekly summary generated for week $week (day $todayIdx)');
     } catch (e) {
       debugPrint('Failed to generate weekly summary: $e');
@@ -166,7 +166,7 @@ class WeeklyAnalysisService {
         if (record != null) {
           // Detect late recording pattern (recordedAt and eatenAt differ by 2+ hours)
           final lateRecordings = <String>[];
-          for (var meal in record.meals) {
+          for (final meal in record.meals) {
             if (meal.recordedAt != null &&
                 meal.recordedAt!.isNotEmpty &&
                 meal.eatenAt != null &&

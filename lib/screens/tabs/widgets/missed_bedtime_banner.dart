@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
 import 'package:switchon_diet/models/diet_record.dart';
+import 'package:switchon_diet/screens/dialogs/bedtime_dialogs.dart';
 import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
-import 'package:switchon_diet/screens/dialogs/bedtime_dialogs.dart';
 
 /// Banner that appears when the user missed recording bedtime yesterday.
 /// Allows recording missed bedtime to maintain accurate sleep tracking.

@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
-import '../models/coach_action.dart';
-import '../models/diet_record.dart';
-import '../models/meal_record.dart';
-import '../services/storage_service.dart';
-import '../services/jst_service.dart';
-import '../constants/meal_offsets.dart';
+import 'package:switchon_diet/constants/meal_offsets.dart';
+import 'package:switchon_diet/models/coach_action.dart';
+import 'package:switchon_diet/models/diet_record.dart';
+import 'package:switchon_diet/models/meal_record.dart';
+import 'package:switchon_diet/services/jst_service.dart';
+import 'package:switchon_diet/services/storage_service.dart';
 
 /// Processes coach AI actions (wake, meal, skip, sleep)
 class CoachActionProcessor {
@@ -144,7 +144,7 @@ class CoachActionProcessor {
       final bedTime = DateTime(now.year, now.month, now.day, hour, minute);
       final bedTimeIso = JstService.toIso(bedTime);
 
-      var record = StorageService.getRecord(todayIdx);
+      final record = StorageService.getRecord(todayIdx);
       if (record == null) return;
 
       record.bedTime = bedTimeIso;

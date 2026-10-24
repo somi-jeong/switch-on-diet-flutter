@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:switchon_diet/services/prompts/claude_prompt_builder.dart';
-import 'package:switchon_diet/services/parsers/claude_response_parser.dart';
 import 'package:switchon_diet/services/parsers/claude_api_client.dart';
+import 'package:switchon_diet/services/parsers/claude_response_parser.dart';
+import 'package:switchon_diet/services/prompts/claude_prompt_builder.dart';
 
 class ClaudeService {
   /// Resolves the API key: `--dart-define=ANTHROPIC_API_KEY=...` takes

@@ -47,7 +47,7 @@ class TopInfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: kBorder, width: 1),
+        border: Border.all(color: kBorder),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -93,7 +93,6 @@ class TopInfoCard extends StatelessWidget {
                       color: isWakeTimeAbnormal ? kRose50 : kLightSlate,
                       border: Border.all(
                         color: isWakeTimeAbnormal ? kRose200 : kBorder,
-                        width: 1,
                       ),
                       borderRadius: BorderRadius.circular(16),
                     ),

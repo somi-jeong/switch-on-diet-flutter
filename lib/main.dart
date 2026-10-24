@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/constants/colors.dart';
-import 'package:switchon_diet/services/storage_service.dart';
-import 'package:switchon_diet/services/notification_service.dart';
-import 'package:switchon_diet/screens/onboarding_screen.dart';
 import 'package:switchon_diet/screens/main_screen.dart';
+import 'package:switchon_diet/screens/onboarding_screen.dart';
+import 'package:switchon_diet/services/notification_service.dart';
+import 'package:switchon_diet/services/storage_service.dart';
 import 'package:timezone/data/latest.dart' as tz;
 
 void main() async {
@@ -23,7 +23,7 @@ void main() async {
 
   try {
     debugPrint('Step 0: Loading environment variables...');
-    await dotenv.load(fileName: '.env');
+    await dotenv.load();
     debugPrint('Step 0: SUCCESS');
   } catch (e) {
     debugPrint('Step 0 FAILED: $e');

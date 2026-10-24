@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/chat_message.dart';
+import 'package:switchon_diet/models/chat_message.dart';
 
 class ChatDetailWidgets {
   static const kDarkGreen = Color(0xFF1F2A24);
@@ -259,7 +259,6 @@ class ChatDetailWidgets {
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           buildAiAvatar(),
@@ -345,7 +344,7 @@ class ChatDetailWidgets {
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE5E7EB), width: 1)),
+        border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
       ),
       child: Row(
         children: [

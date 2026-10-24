@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
-import '../models/diet_record.dart';
-import '../services/storage_service.dart';
-import 'chat_detail/chat_detail_screen.dart';
-import 'chat_history/widgets/history_item.dart';
-import 'chat_history/widgets/chat_history_header.dart';
-import 'chat_history/widgets/chat_history_search_bar.dart';
-import 'chat_history/widgets/chat_history_list.dart';
+import 'package:switchon_diet/models/diet_record.dart';
+import 'package:switchon_diet/screens/chat_detail/chat_detail_screen.dart';
+import 'package:switchon_diet/screens/chat_history/widgets/chat_history_header.dart';
+import 'package:switchon_diet/screens/chat_history/widgets/chat_history_list.dart';
+import 'package:switchon_diet/screens/chat_history/widgets/chat_history_search_bar.dart';
+import 'package:switchon_diet/screens/chat_history/widgets/history_item.dart';
+import 'package:switchon_diet/services/storage_service.dart';
 
 class ChatHistoryScreen extends StatefulWidget {
   final String startDate;

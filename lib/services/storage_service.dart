@@ -1,11 +1,12 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
-import '../models/diet_record.dart';
-import '../models/meal_record.dart';
-import '../models/app_settings.dart';
-import '../models/chat_message.dart';
+import 'package:switchon_diet/models/app_settings.dart';
+import 'package:switchon_diet/models/chat_message.dart';
+import 'package:switchon_diet/models/diet_record.dart';
+import 'package:switchon_diet/models/meal_record.dart';
 
 class StorageService {
   static const String _recordsBoxName = 'records';

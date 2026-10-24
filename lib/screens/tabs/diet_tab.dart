@@ -47,7 +47,6 @@ class DietTab extends StatelessWidget {
                   color: isPhase1
                       ? kPrimaryMint.withValues(alpha: 0.3)
                       : kBorder,
-                  width: 1,
                 ),
               ),
               child: Column(
@@ -163,7 +162,6 @@ class DietTab extends StatelessWidget {
                   color: isPhase2
                       ? kPrimaryMint.withValues(alpha: 0.3)
                       : kBorder,
-                  width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -314,7 +312,6 @@ class DietTab extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isCurrent ? kPrimaryMint.withValues(alpha: 0.3) : kBorder,
-          width: 1,
         ),
         boxShadow: isCurrent
             ? [

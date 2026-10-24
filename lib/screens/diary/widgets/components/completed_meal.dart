@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
 import 'package:switchon_diet/models/meal_record.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/screens/diary/widgets/components/status_badge.dart';
+import 'package:switchon_diet/services/jst_service.dart';
 
 class CompletedMeal extends StatelessWidget {
   final MealRecord meal;
@@ -234,14 +234,12 @@ class CompletedMeal extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: statusInfo.feedbackBgColor,
                               borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(0),
                                 topRight: Radius.circular(16),
                                 bottomLeft: Radius.circular(16),
                                 bottomRight: Radius.circular(16),
                               ),
                               border: Border.all(
                                 color: statusInfo.feedbackBorderColor,
-                                width: 1,
                               ),
                             ),
                             child: Column(

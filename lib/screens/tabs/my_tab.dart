@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
-import 'package:switchon_diet/services/storage_service.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/screens/chat_history_screen.dart';
-import 'package:switchon_diet/screens/diet_history_screen.dart';
 import 'package:switchon_diet/screens/dialogs/settings_dialogs.dart';
+import 'package:switchon_diet/screens/diet_history_screen.dart';
+import 'package:switchon_diet/services/jst_service.dart';
+import 'package:switchon_diet/services/storage_service.dart';
 
 class MyTab extends StatefulWidget {
   final String startDate;
@@ -48,7 +48,7 @@ class _MyTabState extends State<MyTab> with RouteAware {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: kBorder, width: 1),
+                border: Border.all(color: kBorder),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.03),
@@ -119,7 +119,7 @@ class _MyTabState extends State<MyTab> with RouteAware {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: kBorder, width: 1),
+                border: Border.all(color: kBorder),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.03),
@@ -166,7 +166,7 @@ class _MyTabState extends State<MyTab> with RouteAware {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: kBorder, width: 1),
+                border: Border.all(color: kBorder),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.03),
@@ -177,20 +177,13 @@ class _MyTabState extends State<MyTab> with RouteAware {
               ),
               child: Column(
                 children: [
-                  _buildSettingItem(
-                    context,
-                    '챌린지 기간',
-                    '총 28일',
-                    null,
-                    showBorder: true,
-                  ),
+                  _buildSettingItem(context, '챌린지 기간', '총 28일', null),
                   _buildSettingItem(
                     context,
                     '식단 및 수면 기록 보기',
                     null,
                     () => _navigateToDietHistory(context, stats.todayIdx),
                     icon: Icons.calendar_today,
-                    showBorder: true,
                   ),
                   _buildSettingItem(
                     context,
@@ -198,7 +191,6 @@ class _MyTabState extends State<MyTab> with RouteAware {
                     null,
                     () => _navigateToChatHistory(context, stats.todayIdx),
                     icon: Icons.history,
-                    showBorder: true,
                   ),
                   _buildSettingItem(
                     context,
@@ -206,7 +198,6 @@ class _MyTabState extends State<MyTab> with RouteAware {
                     null,
                     () {},
                     icon: Icons.notifications_outlined,
-                    showBorder: true,
                   ),
                   _buildSettingItem(
                     context,
@@ -214,7 +205,6 @@ class _MyTabState extends State<MyTab> with RouteAware {
                     userName,
                     () => SettingsDialogs.showEditNameDialog(context, userName),
                     icon: Icons.person_outline,
-                    showBorder: true,
                   ),
                   _buildSettingItem(
                     context,
@@ -296,7 +286,7 @@ class _MyTabState extends State<MyTab> with RouteAware {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: showBorder
-              ? const Border(bottom: BorderSide(color: kLightSlate, width: 1))
+              ? const Border(bottom: BorderSide(color: kLightSlate))
               : null,
         ),
         child: Row(

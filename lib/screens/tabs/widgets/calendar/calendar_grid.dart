@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/screens/tabs/widgets/calendar/calendar_day_cell.dart';
 import 'package:switchon_diet/screens/tabs/widgets/calendar/calendar_legend.dart';
-import 'package:switchon_diet/models/diet_record.dart';
 
 class CalendarGrid extends StatelessWidget {
   final int todayIdx;
@@ -62,7 +62,7 @@ class CalendarGrid extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: kBorder, width: 1),
+        border: Border.all(color: kBorder),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),

@@ -26,7 +26,6 @@ class WeekStatusCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isActive ? kPrimaryMint.withValues(alpha: 0.3) : kBorder,
-              width: 1,
             ),
             boxShadow: isActive
                 ? [

@@ -125,7 +125,7 @@ class DietHistoryMealsSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        ...record.meals.map((meal) => _buildMealRow(meal)),
+        ...record.meals.map(_buildMealRow),
       ],
     );
   }

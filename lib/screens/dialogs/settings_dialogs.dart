@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
-import 'package:switchon_diet/services/storage_service.dart';
 import 'package:switchon_diet/screens/onboarding_screen.dart';
+import 'package:switchon_diet/services/storage_service.dart';
 
 class SettingsDialogs {
   static Future<void> showEditStartDateDialog(
@@ -122,7 +122,7 @@ class SettingsDialogs {
                         onPressed: () async {
                           await StorageService.clearAll();
                           if (context.mounted) {
-                            Navigator.of(context).pushAndRemoveUntil(
+                            await Navigator.of(context).pushAndRemoveUntil(
                               MaterialPageRoute(
                                 builder: (_) => const OnboardingScreen(),
                               ),
@@ -347,7 +347,7 @@ class _DatePickerBottomSheetState extends State<_DatePickerBottomSheet> {
     }
 
     if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
+      await Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const OnboardingScreen()),
         (route) => false,
       );
@@ -397,7 +397,7 @@ class _DatePickerBottomSheetState extends State<_DatePickerBottomSheet> {
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: selectedDate,
-                    firstDate: DateTime(2020, 1, 1),
+                    firstDate: DateTime(2020),
                     lastDate: DateTime.now(),
                   );
                   if (picked != null) {

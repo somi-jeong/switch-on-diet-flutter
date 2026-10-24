@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
-import 'package:switchon_diet/services/storage_service.dart';
-import 'package:switchon_diet/services/jst_service.dart';
-import 'package:switchon_diet/screens/widgets/weekly_chart_widgets.dart';
 import 'package:switchon_diet/screens/widgets/score_chart_widgets.dart';
-import 'package:switchon_diet/screens/widgets/weight_chart_widgets.dart';
 import 'package:switchon_diet/screens/widgets/summary_card_widgets.dart';
+import 'package:switchon_diet/screens/widgets/weekly_chart_widgets.dart';
+import 'package:switchon_diet/screens/widgets/weight_chart_widgets.dart';
+import 'package:switchon_diet/services/jst_service.dart';
+import 'package:switchon_diet/services/storage_service.dart';
 
 class WeeklyFeedbackScreen extends StatelessWidget {
   final String startDate;
@@ -76,7 +76,7 @@ class WeeklyFeedbackScreen extends StatelessWidget {
       final record = allRecords[i];
 
       if (record != null) {
-        for (var meal in record.meals) {
+        for (final meal in record.meals) {
           if (meal.skipped) {
             continue; // Don't count skipped meals
           }

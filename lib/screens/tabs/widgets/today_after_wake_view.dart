@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/models/meal_record.dart';
-import 'package:switchon_diet/services/jst_service.dart';
-import 'package:switchon_diet/services/storage_service.dart';
-import 'package:switchon_diet/services/meal_timing_service.dart';
-import 'package:switchon_diet/screens/diary/widgets/meal_card.dart';
-import 'package:switchon_diet/screens/dialogs/meal_dialogs.dart';
-import 'package:switchon_diet/screens/dialogs/components/meal/skip_warning_dialog.dart';
-import 'package:switchon_diet/screens/dialogs/components/meal/skip_reason_dialog.dart';
 import 'package:switchon_diet/screens/dialogs/components/meal/late_reason_dialog.dart';
 import 'package:switchon_diet/screens/dialogs/components/meal/missed_meal_time_dialog.dart';
-import 'package:switchon_diet/screens/tabs/widgets/top_info_card.dart';
-import 'package:switchon_diet/screens/tabs/widgets/daily_missions_card.dart';
-import 'package:switchon_diet/screens/tabs/widgets/fasting_timer_card.dart';
+import 'package:switchon_diet/screens/dialogs/components/meal/skip_reason_dialog.dart';
+import 'package:switchon_diet/screens/dialogs/components/meal/skip_warning_dialog.dart';
+import 'package:switchon_diet/screens/dialogs/meal_dialogs.dart';
+import 'package:switchon_diet/screens/diary/widgets/meal_card.dart';
+import 'package:switchon_diet/screens/record_meal_screen.dart';
 import 'package:switchon_diet/screens/tabs/widgets/ai_feedback_card.dart';
 import 'package:switchon_diet/screens/tabs/widgets/bedtime_card.dart';
-import 'package:switchon_diet/screens/record_meal_screen.dart';
+import 'package:switchon_diet/screens/tabs/widgets/daily_missions_card.dart';
+import 'package:switchon_diet/screens/tabs/widgets/fasting_timer_card.dart';
+import 'package:switchon_diet/screens/tabs/widgets/top_info_card.dart';
+import 'package:switchon_diet/services/jst_service.dart';
+import 'package:switchon_diet/services/meal_timing_service.dart';
+import 'package:switchon_diet/services/storage_service.dart';
 
 /// The main view shown after the user has recorded their wake time.
 /// Displays today's progress, daily missions, meals timeline, and bedtime tracking.
@@ -108,7 +108,6 @@ class TodayAfterWakeView extends StatelessWidget {
       final updatedMeals = List<MealRecord>.from(record.meals);
       updatedMeals[index] = MealRecord(
         label: meal.label,
-        checked: false,
         skipped: true,
         guideText: meal.guideText,
         skipReason: reason,

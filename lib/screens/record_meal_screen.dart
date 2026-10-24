@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
 import 'package:switchon_diet/constants/diet_data.dart';
 import 'package:switchon_diet/models/meal_record.dart';
+import 'package:switchon_diet/screens/dialogs/meal_dialogs.dart';
+import 'package:switchon_diet/screens/record_meal/widgets/ai_coach_message_card.dart';
+import 'package:switchon_diet/screens/record_meal/widgets/food_text_input.dart';
+import 'package:switchon_diet/screens/record_meal/widgets/meal_time_input.dart';
+import 'package:switchon_diet/screens/record_meal/widgets/record_meal_actions.dart';
+import 'package:switchon_diet/screens/record_meal/widgets/record_meal_header.dart';
+import 'package:switchon_diet/services/claude_service.dart';
 import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
-import 'package:switchon_diet/services/claude_service.dart';
-import 'package:switchon_diet/screens/dialogs/meal_dialogs.dart';
-import 'package:switchon_diet/screens/record_meal/widgets/record_meal_header.dart';
-import 'package:switchon_diet/screens/record_meal/widgets/ai_coach_message_card.dart';
-import 'package:switchon_diet/screens/record_meal/widgets/meal_time_input.dart';
-import 'package:switchon_diet/screens/record_meal/widgets/food_text_input.dart';
-import 'package:switchon_diet/screens/record_meal/widgets/record_meal_actions.dart';
 
 class RecordMealScreen extends StatefulWidget {
   final String mealType; // '아침', '점심', '간식', '저녁'
@@ -118,7 +118,7 @@ class _RecordMealScreenState extends State<RecordMealScreen> {
     try {
       // Get current record
       final todayIdx = widget.todayIdx!;
-      var record = StorageService.getRecord(todayIdx);
+      final record = StorageService.getRecord(todayIdx);
       if (record == null) {
         debugPrint('[RecordMeal] No record found for day $todayIdx');
         if (!mounted) return;
@@ -217,7 +217,6 @@ class _RecordMealScreenState extends State<RecordMealScreen> {
               : status == 'WARNING'
               ? Colors.orange
               : Colors.red,
-          duration: const Duration(seconds: 4),
         ),
       );
 

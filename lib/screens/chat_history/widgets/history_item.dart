@@ -1,5 +1,5 @@
-import '../../../models/chat_message.dart';
-import '../../../models/diet_record.dart';
+import 'package:switchon_diet/models/chat_message.dart';
+import 'package:switchon_diet/models/diet_record.dart';
 
 class HistoryItem {
   final String type; // 'daily' or 'weekly'

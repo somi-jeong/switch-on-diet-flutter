@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
 import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/services/storage_service.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/screens/diet_history/widgets/diet_history_day_card.dart';
 import 'package:switchon_diet/screens/past_date_meal_selection_screen.dart';
+import 'package:switchon_diet/services/jst_service.dart';
+import 'package:switchon_diet/services/storage_service.dart';
 
 class DietHistoryScreen extends StatefulWidget {
   final String startDate;
@@ -39,7 +39,7 @@ class _DietHistoryScreenState extends State<DietHistoryScreen> {
     super.dispose();
   }
 
-  void _loadHistory() async {
+  Future<void> _loadHistory() async {
     final history = <_DayHistory>[];
 
     // Show ALL days from 1 to todayIdx, even if no record exists
@@ -218,7 +218,7 @@ class _DietHistoryScreenState extends State<DietHistoryScreen> {
                               ),
                             );
                             // Reload history after returning
-                            _loadHistory();
+                            await _loadHistory();
                           },
                           child: DietHistoryDayCard(
                             dayIdx: dayHistory.dayIdx,

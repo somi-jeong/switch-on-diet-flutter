@@ -13,11 +13,7 @@ class NotificationService {
   static Future<void> init() async {
     if (_initialized) return;
 
-    const initializationSettingsIOS = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+    const initializationSettingsIOS = DarwinInitializationSettings();
 
     const initializationSettings = InitializationSettings(
       iOS: initializationSettingsIOS,

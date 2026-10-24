@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:switchon_diet/services/claude_service.dart';
 import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
-import 'package:switchon_diet/services/claude_service.dart';
 
 class DailyAnalysisService {
   /// Checks if current time is 23:00-23:59 JST and generates daily feedback
@@ -117,7 +117,7 @@ class DailyAnalysisService {
 
       // Save feedback
       todayRecord.aiFeedback = feedback;
-      StorageService.saveRecord(todayRecord, todayIdx);
+      await StorageService.saveRecord(todayRecord, todayIdx);
 
       debugPrint('Daily feedback generated for day $todayIdx');
     } catch (e) {

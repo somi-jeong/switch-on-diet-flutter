@@ -5,14 +5,14 @@ import 'package:switchon_diet/constants/meal_offsets.dart';
 import 'package:switchon_diet/models/app_settings.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/models/meal_record.dart';
-import 'package:switchon_diet/services/jst_service.dart';
-import 'package:switchon_diet/services/storage_service.dart';
+import 'package:switchon_diet/screens/ai_coach_bottom_sheet.dart';
+import 'package:switchon_diet/screens/tabs/widgets/today_after_wake_view.dart';
+import 'package:switchon_diet/screens/tabs/widgets/today_before_wake_view.dart';
 import 'package:switchon_diet/screens/tabs/widgets/today_header.dart';
 import 'package:switchon_diet/screens/tabs/widgets/today_widgets.dart';
-import 'package:switchon_diet/screens/tabs/widgets/today_before_wake_view.dart';
-import 'package:switchon_diet/screens/tabs/widgets/today_after_wake_view.dart';
-import 'package:switchon_diet/screens/ai_coach_bottom_sheet.dart';
 import 'package:switchon_diet/screens/tabs/widgets/wake_time_sheet.dart';
+import 'package:switchon_diet/services/jst_service.dart';
+import 'package:switchon_diet/services/storage_service.dart';
 
 class TodayTab extends ConsumerStatefulWidget {
   final VoidCallback? onDataChanged;
@@ -36,7 +36,7 @@ class _TodayTabState extends ConsumerState<TodayTab> {
     _load();
   }
 
-  void _load() async {
+  Future<void> _load() async {
     final settings = StorageService.getSettings();
     if (settings == null || settings.startDate.isEmpty) {
       setState(() => _loading = false);
@@ -90,7 +90,7 @@ class _TodayTabState extends ConsumerState<TodayTab> {
       // else: 05~09시는 모든 식사 가능
 
       if (shouldInclude) {
-        meals.add(MealRecord(label: m.label, checked: false));
+        meals.add(MealRecord(label: m.label));
       }
     }
 

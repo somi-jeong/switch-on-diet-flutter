@@ -94,7 +94,7 @@ class MealTimeInput extends StatelessWidget {
     );
   }
 
-  void _showHourPicker(BuildContext context) async {
+  Future<void> _showHourPicker(BuildContext context) async {
     final currentHour = int.tryParse(controller.text.split(':')[0]) ?? 12;
 
     final selectedHour = await showDialog<int>(

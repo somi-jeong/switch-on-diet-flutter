@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:switchon_diet/constants/colors.dart';
 import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
-import 'package:switchon_diet/constants/colors.dart';
 
 class WakeTimeSheet extends StatefulWidget {
   final DateTime? targetDate;
@@ -304,7 +304,6 @@ class _WakeTimeSheetState extends State<WakeTimeSheet> {
                       color: _isWakeTimeLate
                           ? const Color(0xFFFECACA)
                           : const Color(0xFFE2E8F0),
-                      width: 1,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
@@ -313,14 +312,12 @@ class _WakeTimeSheetState extends State<WakeTimeSheet> {
                       color: _isWakeTimeLate
                           ? const Color(0xFFFECACA)
                           : const Color(0xFFE2E8F0),
-                      width: 1,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
                       color: _isWakeTimeLate ? kRose500 : kPrimaryMint,
-                      width: 1,
                     ),
                   ),
                   contentPadding: const EdgeInsets.all(16),

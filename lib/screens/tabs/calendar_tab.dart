@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
 import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/screens/tabs/widgets/calendar/calendar_header.dart';
 import 'package:switchon_diet/screens/tabs/widgets/calendar/calendar_grid.dart';
+import 'package:switchon_diet/screens/tabs/widgets/calendar/calendar_header.dart';
 import 'package:switchon_diet/screens/tabs/widgets/calendar/day_details.dart';
 import 'package:switchon_diet/screens/tabs/widgets/calendar/future_day_message.dart';
 import 'package:switchon_diet/screens/tabs/widgets/calendar/week_status_card.dart';

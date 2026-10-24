@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
 import 'package:switchon_diet/models/app_settings.dart';
 import 'package:switchon_diet/models/diet_record.dart';
+import 'package:switchon_diet/screens/dialogs/meal_dialogs.dart';
+import 'package:switchon_diet/screens/past_date_meal_selection_screen.dart';
+import 'package:switchon_diet/screens/tabs/calendar_tab.dart';
+import 'package:switchon_diet/screens/tabs/diet_tab.dart';
+import 'package:switchon_diet/screens/tabs/my_tab.dart';
+import 'package:switchon_diet/screens/tabs/today_tab.dart';
+import 'package:switchon_diet/screens/weekly_feedback_screen.dart';
 import 'package:switchon_diet/services/daily_analysis_service.dart';
 import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 import 'package:switchon_diet/services/weekly_analysis_service.dart';
-import 'package:switchon_diet/screens/tabs/calendar_tab.dart';
-import 'package:switchon_diet/screens/tabs/today_tab.dart';
-import 'package:switchon_diet/screens/tabs/diet_tab.dart';
-import 'package:switchon_diet/screens/tabs/my_tab.dart';
-import 'package:switchon_diet/screens/weekly_feedback_screen.dart';
-import 'package:switchon_diet/screens/dialogs/meal_dialogs.dart';
-import 'package:switchon_diet/screens/past_date_meal_selection_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -54,7 +54,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _checkWeeklyAnalysis() async {
+  Future<void> _checkWeeklyAnalysis() async {
     if (_settings.startDate.isNotEmpty) {
       await WeeklyAnalysisService.checkAndGenerateWeeklySummary(
         startDate: _settings.startDate,
@@ -62,7 +62,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _checkDailyAnalysis() async {
+  Future<void> _checkDailyAnalysis() async {
     if (_settings.startDate.isNotEmpty) {
       await DailyAnalysisService.checkAndGenerateDailyFeedback(
         startDate: _settings.startDate,
@@ -118,7 +118,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
   }
 
-  void _handleDateTap(int dayIdx) async {
+  Future<void> _handleDateTap(int dayIdx) async {
     // Show past date meal input dialog
     await _showPastDateMealDialog(dayIdx);
   }
@@ -205,7 +205,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               padding: const EdgeInsets.fromLTRB(8, 12, 8, 24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                border: const Border(top: BorderSide(color: kBorder, width: 1)),
+                border: const Border(top: BorderSide(color: kBorder)),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(24),
                   topRight: Radius.circular(24),

@@ -195,11 +195,7 @@ class MealSummaryCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: kLightSlate,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: const Color(0xFFCBD5E1),
-              width: 1,
-              style: BorderStyle.solid,
-            ),
+            border: Border.all(color: const Color(0xFFCBD5E1)),
           ),
           child: Row(
             children: [

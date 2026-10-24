@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
 import 'package:switchon_diet/models/meal_record.dart';
-import 'package:switchon_diet/services/jst_service.dart';
-import 'package:switchon_diet/screens/diary/widgets/meal_card.dart';
-import 'package:switchon_diet/utils/time_validator.dart';
 import 'package:switchon_diet/screens/dialogs/wake_dialogs.dart';
+import 'package:switchon_diet/screens/diary/widgets/meal_card.dart';
 import 'package:switchon_diet/screens/tabs/widgets/missed_bedtime_banner.dart';
+import 'package:switchon_diet/services/jst_service.dart';
+import 'package:switchon_diet/utils/time_validator.dart';
 
 /// The view shown before the user records their wake time.
 /// Displays a wake-up card with late time warnings and locked meal placeholders.

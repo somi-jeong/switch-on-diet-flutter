@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/models/app_settings.dart';
+import 'package:switchon_diet/screens/main_screen.dart';
 import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
-import 'package:switchon_diet/screens/main_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -22,7 +22,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final now = JstService.now();
     // Remove time component for date comparison
     _selectedDate = DateTime(now.year, now.month, now.day);
-    _currentMonth = DateTime(now.year, now.month, 1);
+    _currentMonth = DateTime(now.year, now.month);
 
     // Force rebuild to show selected date
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -38,7 +38,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _handleStart() async {
+  Future<void> _handleStart() async {
     final dateStr =
         '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
 
@@ -50,7 +50,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await StorageService.saveSettings(settings);
 
     if (mounted) {
-      Navigator.of(
+      await Navigator.of(
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => const MainScreen()));
     }
@@ -58,13 +58,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _handlePrevMonth() {
     setState(() {
-      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1, 1);
+      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
     });
   }
 
   void _handleNextMonth() {
     setState(() {
-      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
+      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
     });
   }
 
@@ -73,7 +73,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   int _getFirstDayOfMonth(int year, int month) {
-    return DateTime(year, month, 1).weekday % 7;
+    return DateTime(year, month).weekday % 7;
   }
 
   bool _isSameDate(DateTime d1, DateTime d2) {
@@ -159,10 +159,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFFE2E8F0),
-                        width: 1,
-                      ),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: TextField(
                       controller: _nameController,
@@ -189,10 +186,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: const Color(0xFFE2E8F0),
-                        width: 1,
-                      ),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Column(
                       children: [

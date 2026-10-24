@@ -58,10 +58,7 @@ class MissedMeal extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFFFEF3C7),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: const Color(0xFFFBBF24),
-                          width: 1,
-                        ),
+                        border: Border.all(color: const Color(0xFFFBBF24)),
                       ),
                       child: const Text(
                         '미입력',
@@ -82,10 +79,7 @@ class MissedMeal extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEF3C7).withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: const Color(0xFFFBBF24),
-                        width: 1,
-                      ),
+                      border: Border.all(color: const Color(0xFFFBBF24)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,10 +129,7 @@ class MissedMeal extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.8),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFFFBBF24),
-                              width: 1,
-                            ),
+                            border: Border.all(color: const Color(0xFFFBBF24)),
                           ),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,

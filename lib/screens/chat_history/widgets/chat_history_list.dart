@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../constants/colors.dart';
-import 'history_item.dart';
-import 'weekly_summary_card.dart';
-import 'daily_feedback_card.dart';
+import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/screens/chat_history/widgets/daily_feedback_card.dart';
+import 'package:switchon_diet/screens/chat_history/widgets/history_item.dart';
+import 'package:switchon_diet/screens/chat_history/widgets/weekly_summary_card.dart';
 
 class ChatHistoryList extends StatelessWidget {
   final List<HistoryItem> items;

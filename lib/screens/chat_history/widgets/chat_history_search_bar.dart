@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../constants/colors.dart';
+import 'package:switchon_diet/constants/colors.dart';
 
 class ChatHistorySearchBar extends StatelessWidget {
   final Function(String) onSearchChanged;

@@ -118,10 +118,7 @@ class AiFeedbackCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: borderColor.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
+                  border: Border.all(color: borderColor.withValues(alpha: 0.5)),
                 ),
                 child: Text(
                   statusBadge,
@@ -163,10 +160,7 @@ class AiFeedbackCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: textColor.withValues(alpha: 0.3),
-                      width: 1,
-                    ),
+                    border: Border.all(color: textColor.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     rule,

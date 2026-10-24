@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
-import '../models/chat_message.dart';
+import 'package:switchon_diet/models/chat_message.dart';
 
 /// Reusable widgets for AI coach bottom sheet
 class AiCoachWidgets {
@@ -14,9 +14,7 @@ class AiCoachWidgets {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: const Border(
-          bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1),
-        ),
+        border: const Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -120,7 +118,7 @@ class AiCoachWidgets {
                 ),
                 border: isUser
                     ? null
-                    : Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                    : Border.all(color: const Color(0xFFE2E8F0)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.02),
@@ -170,9 +168,7 @@ class AiCoachWidgets {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: const Border(
-          top: BorderSide(color: Color(0xFFF1F5F9), width: 1),
-        ),
+        border: const Border(top: BorderSide(color: Color(0xFFF1F5F9))),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -189,7 +185,7 @@ class AiCoachWidgets {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: const Color(0xFFF8FAFC),
-                border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
                 borderRadius: BorderRadius.circular(22),
               ),
               child: TextField(

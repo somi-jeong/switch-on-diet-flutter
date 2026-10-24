@@ -20,7 +20,7 @@ class WakeButton extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE5E5E5), width: 1),
+        border: Border.all(color: const Color(0xFFE5E5E5)),
       ),
       child: ElevatedButton(
         onPressed: onPressed,
@@ -83,7 +83,7 @@ class LockedMealCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE5E5E5), width: 1),
+        border: Border.all(color: const Color(0xFFE5E5E5)),
       ),
       child: Row(
         children: [

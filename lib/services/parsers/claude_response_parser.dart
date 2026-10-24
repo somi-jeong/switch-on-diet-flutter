@@ -40,7 +40,7 @@ class ClaudeResponseParser {
     weekRecords.forEach((day, record) {
       final meals = record['meals'] as List?;
       if (meals != null) {
-        for (var m in meals) {
+        for (final m in meals) {
           if (m['aiStatus'] == 'FORBIDDEN') {
             violations.add('$day일차 ${m['label']}: FORBIDDEN');
           }
@@ -88,7 +88,7 @@ class ClaudeResponseParser {
   }) {
     final messages = <Map<String, dynamic>>[];
     if (chatHistory != null) {
-      for (var msg in chatHistory) {
+      for (final msg in chatHistory) {
         messages.add({
           'role': msg['role'] == 'user' ? 'user' : 'assistant',
           'content': msg['content'],

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
 
+export 'package:switchon_diet/screens/dialogs/components/meal/error_dialog.dart';
+
 /// Dialog builders for meal-related UI interactions
 /// Re-export commonly used dialogs
 export 'package:switchon_diet/screens/dialogs/components/meal/loading_dialog.dart';
-export 'package:switchon_diet/screens/dialogs/components/meal/error_dialog.dart';
-export 'package:switchon_diet/screens/dialogs/components/meal/skip_warning_dialog.dart';
 export 'package:switchon_diet/screens/dialogs/components/meal/past_date_warning_dialog.dart';
+export 'package:switchon_diet/screens/dialogs/components/meal/skip_warning_dialog.dart';
 
 class MealDialogs {
   /// Shows a wake time confirmation dialog for unusual wake times
@@ -171,7 +172,7 @@ class MealDialogs {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(null),
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('취소'),
           ),
           TextButton(
@@ -246,7 +247,7 @@ class MealDialogs {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(null),
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('취소'),
           ),
           TextButton(

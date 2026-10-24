@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../models/chat_message.dart';
-import '../../services/storage_service.dart';
-import '../../services/claude_service.dart';
-import '../../services/jst_service.dart';
-import '../../constants/diet_data.dart';
-import 'widgets/chat_detail_widgets.dart';
+import 'package:switchon_diet/constants/diet_data.dart';
+import 'package:switchon_diet/models/chat_message.dart';
+import 'package:switchon_diet/screens/chat_detail/widgets/chat_detail_widgets.dart';
+import 'package:switchon_diet/services/claude_service.dart';
+import 'package:switchon_diet/services/jst_service.dart';
+import 'package:switchon_diet/services/storage_service.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final int day;

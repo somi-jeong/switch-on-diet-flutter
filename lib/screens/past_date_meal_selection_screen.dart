@@ -4,8 +4,8 @@ import 'package:switchon_diet/constants/meal_offsets.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/models/meal_record.dart';
 import 'package:switchon_diet/screens/record_meal_screen.dart';
-import 'package:switchon_diet/services/storage_service.dart';
 import 'package:switchon_diet/services/jst_service.dart';
+import 'package:switchon_diet/services/storage_service.dart';
 
 /// Screen for selecting which meal to record for a past date.
 /// Allows users to navigate to RecordMealScreen for any meal in a past date's record.
@@ -167,7 +167,7 @@ class _PastDateMealSelectionScreenState
     if (selectedHour != null && mounted) {
       // Create wake time with selected hour
       final now = JstService.now();
-      final wakeTime = DateTime(now.year, now.month, now.day, selectedHour, 0);
+      final wakeTime = DateTime(now.year, now.month, now.day, selectedHour);
       final wakeTimeIso = JstService.toIso(wakeTime);
 
       // Generate meals based on wake time (like today_tab does)
@@ -189,7 +189,7 @@ class _PastDateMealSelectionScreenState
       );
 
       await StorageService.saveRecord(updatedRecord, widget.dayIdx);
-      _loadRecord(); // Reload to show meals
+      await _loadRecord();
     }
   }
 
@@ -288,7 +288,7 @@ class _PastDateMealSelectionScreenState
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => _showWakeTimeDialog(),
+                onPressed: _showWakeTimeDialog,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryMint,
                   foregroundColor: Colors.white,
@@ -392,7 +392,7 @@ class _PastDateMealSelectionScreenState
             ),
           ),
           const SizedBox(height: 12),
-          ...(_record!.meals.map((meal) => _buildMealCard(meal))),
+          ...(_record!.meals.map(_buildMealCard)),
         ],
       ),
     );

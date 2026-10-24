@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/models/meal_record.dart';
-import 'package:switchon_diet/screens/diary/widgets/components/locked_meal.dart';
-import 'package:switchon_diet/screens/diary/widgets/components/next_meal.dart';
 import 'package:switchon_diet/screens/diary/widgets/components/completed_meal.dart';
-import 'package:switchon_diet/screens/diary/widgets/components/pending_meal.dart';
+import 'package:switchon_diet/screens/diary/widgets/components/locked_meal.dart';
 import 'package:switchon_diet/screens/diary/widgets/components/missed_meal.dart';
+import 'package:switchon_diet/screens/diary/widgets/components/next_meal.dart';
+import 'package:switchon_diet/screens/diary/widgets/components/pending_meal.dart';
 import 'package:switchon_diet/screens/diary/widgets/components/skipped_meal.dart';
 
 /// 식사 타임라인 카드

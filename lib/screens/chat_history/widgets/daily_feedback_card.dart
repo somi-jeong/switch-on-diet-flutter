@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../constants/colors.dart';
-import 'history_item.dart';
+import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/screens/chat_history/widgets/history_item.dart';
 
 class DailyFeedbackCard extends StatelessWidget {
   final HistoryItem item;

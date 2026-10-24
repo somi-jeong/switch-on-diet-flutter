@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
-import '../models/chat_message.dart';
-import '../models/coach_action.dart';
-import '../services/storage_service.dart';
-import '../services/claude_service.dart';
-import '../services/parsers/claude_api_client.dart';
-import '../services/coach_action_processor.dart';
-import '../services/jst_service.dart';
-import '../constants/diet_data.dart';
-import './ai_coach_widgets.dart';
-import './dialogs/components/api_error_dialog.dart';
+import 'package:switchon_diet/constants/diet_data.dart';
+import 'package:switchon_diet/models/chat_message.dart';
+import 'package:switchon_diet/models/coach_action.dart';
+import 'package:switchon_diet/screens/ai_coach_widgets.dart';
+import 'package:switchon_diet/screens/dialogs/components/api_error_dialog.dart';
+import 'package:switchon_diet/services/claude_service.dart';
+import 'package:switchon_diet/services/coach_action_processor.dart';
+import 'package:switchon_diet/services/jst_service.dart';
+import 'package:switchon_diet/services/parsers/claude_api_client.dart';
+import 'package:switchon_diet/services/storage_service.dart';
 
 class AiCoachBottomSheet extends StatefulWidget {
   final String todayDate;
@@ -446,7 +446,7 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
           AiCoachWidgets.buildInputArea(
             controller: _controller,
             sending: _sending,
-            onSend: () => _sendMessage(),
+            onSend: _sendMessage,
           ),
           // Bottom safe area spacer
           Container(height: bottomPadding, color: Colors.white),

@@ -15,7 +15,7 @@ class FastingTimerCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: kAmberBdr, width: 1),
+        border: Border.all(color: kAmberBdr),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),

@@ -1,7 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
 import 'package:switchon_diet/screens/widgets/weekly_chart_widgets.dart';
-import 'dart:math' as math;
 
 /// Weight line chart widget
 class WeightLineChart extends StatelessWidget {

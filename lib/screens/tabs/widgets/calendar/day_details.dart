@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/colors.dart';
 import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/screens/tabs/widgets/calendar/daily_rules_section.dart';
-import 'package:switchon_diet/screens/tabs/widgets/calendar/ai_feedback_section.dart';
-import 'package:switchon_diet/screens/tabs/widgets/calendar/meal_summary_card.dart';
 import 'package:switchon_diet/screens/diet_history_screen.dart';
+import 'package:switchon_diet/screens/tabs/widgets/calendar/ai_feedback_section.dart';
+import 'package:switchon_diet/screens/tabs/widgets/calendar/daily_rules_section.dart';
+import 'package:switchon_diet/screens/tabs/widgets/calendar/meal_summary_card.dart';
 
 class DayDetails extends StatelessWidget {
   final int selectedDay;
@@ -90,10 +90,7 @@ class DayDetails extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEF3C7),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: const Color(0xFFD97706),
-                      width: 1,
-                    ),
+                    border: Border.all(color: const Color(0xFFD97706)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
