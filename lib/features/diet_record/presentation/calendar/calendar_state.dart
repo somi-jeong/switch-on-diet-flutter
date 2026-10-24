@@ -3,6 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:switchon_diet/core/di/core_providers.dart';
 import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
 import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
 import 'package:switchon_diet/features/diet_record/domain/entities/meal_verdict.dart';
 import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
 import 'package:switchon_diet/features/settings/settings_providers.dart';
@@ -97,7 +98,7 @@ class CalendarState with _$CalendarState {
   }
 
   List<MealSummary> mealsOf(int day) => [
-    for (final meal in records[day]?.meals ?? const [])
+    for (final meal in records[day]?.meals ?? const <MealRecord>[])
       MealSummary(
         label: meal.label,
         time: meal.mealTime ?? (meal.skipped ? '-' : ''),

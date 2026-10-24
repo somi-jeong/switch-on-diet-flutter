@@ -153,7 +153,7 @@ class _PastDateMealSelectionScreenState
     if (meal == null) return;
 
     await Navigator.of(context).push(
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (context) => RecordMealScreen(
           mealType: mealType,
           day: widget.dayIdx,

@@ -2,13 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:switchon_diet/core/notifications/notification_service.dart';
 import 'package:switchon_diet/features/coach/coach_providers.dart';
 import 'package:switchon_diet/features/coach/data/datasources/chat_local_data_source.dart';
 import 'package:switchon_diet/features/diet_record/data/models/diet_record_model.dart';
 import 'package:switchon_diet/features/diet_record/data/models/meal_record_model.dart';
 import 'package:switchon_diet/features/diet_record/data/repositories/hive_diet_record_repository.dart';
 import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
+import 'package:switchon_diet/features/meal/data/meal_reminder_service.dart';
 import 'package:switchon_diet/features/settings/data/models/app_settings_model.dart';
 import 'package:switchon_diet/features/settings/data/repositories/hive_settings_repository.dart';
 import 'package:switchon_diet/features/settings/settings_providers.dart';
@@ -32,7 +32,7 @@ Future<List<Override>> bootstrap() async {
   final overrides = await _run('Storage init failed', _openStorage);
 
   try {
-    await NotificationService().init();
+    await MealReminderService().init();
   } on Object catch (error) {
     // Reminders are optional; the app works without them.
     debugPrint('Notification init failed: $error');

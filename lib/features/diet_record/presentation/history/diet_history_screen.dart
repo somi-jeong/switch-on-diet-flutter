@@ -112,7 +112,7 @@ class _DietHistoryScreenState extends ConsumerState<DietHistoryScreen> {
                   return GestureDetector(
                     onTap: () async {
                       await Navigator.of(context).push(
-                        MaterialPageRoute(
+                        MaterialPageRoute<void>(
                           builder: (context) => PastDateMealSelectionScreen(
                             dayIdx: dayHistory.day,
                             dateStr: dayHistory.dateLabel,

@@ -8,7 +8,7 @@ class SettingsDialogs {
     BuildContext context,
     String currentStartDate,
   ) async {
-    await showModalBottomSheet(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -21,7 +21,7 @@ class SettingsDialogs {
     BuildContext context,
     String currentName,
   ) async {
-    await showModalBottomSheet(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -30,7 +30,7 @@ class SettingsDialogs {
   }
 
   static void showResetDialog(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       barrierColor: const Color(0xFF0F172A).withValues(alpha: 0.4),
       builder: (context) => Dialog(

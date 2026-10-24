@@ -8,8 +8,8 @@ import 'package:timezone/timezone.dart' as tz;
 ///
 /// Initialised at startup. Scheduling is implemented but not yet exposed in
 /// the UI.
-class NotificationService {
-  NotificationService({
+class MealReminderService {
+  MealReminderService({
     FlutterLocalNotificationsPlugin? plugin,
     Clock clock = const JstClock(),
   }) : _plugin = plugin ?? FlutterLocalNotificationsPlugin(),

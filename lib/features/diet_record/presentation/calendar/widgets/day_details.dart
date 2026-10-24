@@ -66,7 +66,7 @@ class DayDetails extends StatelessWidget {
               GestureDetector(
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
                       builder: (context) =>
                           DietHistoryScreen(initialSelectedDay: selectedDay),
                     ),

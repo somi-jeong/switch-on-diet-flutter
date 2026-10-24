@@ -26,22 +26,17 @@ TOTAL_ISSUES=0
 echo -e "${BLUE}📊 CHECK 1: Flutter Analyze${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-if flutter analyze > /tmp/flutter_analyze_check.txt 2>&1; then
-    ISSUE_COUNT=$(grep -E "issue.*found" /tmp/flutter_analyze_check.txt | grep -o '[0-9]\+' | head -1)
+ANALYZE_OUTPUT=$("${FLUTTER:-flutter}" analyze 2>&1)
+ISSUE_COUNT=$(echo "$ANALYZE_OUTPUT" | grep -c " • ")
 
-    if [ -z "$ISSUE_COUNT" ] || [ "$ISSUE_COUNT" -eq 0 ]; then
-        echo -e "${GREEN}✅ No issues found${NC}"
-    else
-        echo -e "${RED}❌ Found $ISSUE_COUNT issues:${NC}"
-        echo ""
-        cat /tmp/flutter_analyze_check.txt
-        echo ""
-        TOTAL_ISSUES=$((TOTAL_ISSUES + ISSUE_COUNT))
-    fi
+if [ "$ISSUE_COUNT" -eq 0 ] && echo "$ANALYZE_OUTPUT" | grep -q "No issues found"; then
+    echo -e "${GREEN}✅ No issues found${NC}"
 else
-    echo -e "${RED}❌ Flutter analyze failed${NC}"
-    cat /tmp/flutter_analyze_check.txt
-    TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
+    echo -e "${RED}❌ flutter analyze reported issues:${NC}"
+    echo ""
+    echo "$ANALYZE_OUTPUT"
+    echo ""
+    TOTAL_ISSUES=$((TOTAL_ISSUES + (ISSUE_COUNT > 0 ? ISSUE_COUNT : 1)))
 fi
 
 echo ""
@@ -65,7 +60,7 @@ while IFS= read -r file; do
     elif [ "$LINE_COUNT" -gt 400 ]; then
         LARGEST_FILES="$LARGEST_FILES\n  ${YELLOW}⚠️${NC}  $file: $LINE_COUNT lines (approaching limit)"
     fi
-done < <(find lib -name "*.dart" -type f)
+done < <(find lib -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f)
 
 if [ "$OVERSIZED_COUNT" -eq 0 ]; then
     echo -e "${GREEN}✅ All files under 500 lines${NC}"
@@ -90,8 +85,8 @@ echo ""
 echo -e "${BLUE}📊 CHECK 3: Project Statistics${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-TOTAL_FILES=$(find lib -name "*.dart" | wc -l | tr -d ' ')
-TOTAL_LINES=$(find lib -name "*.dart" -exec wc -l {} + | tail -1 | awk '{print $1}')
+TOTAL_FILES=$(find lib -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" | wc -l | tr -d ' ')
+TOTAL_LINES=$(find lib -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -exec wc -l {} + | tail -1 | awk '{print $1}')
 AVG_LINES=$((TOTAL_LINES / TOTAL_FILES))
 
 echo "📁 Total Dart Files: $TOTAL_FILES"
@@ -100,7 +95,7 @@ echo "📊 Average Lines per File: $AVG_LINES"
 
 echo ""
 echo "Top 10 Largest Files:"
-find lib -name "*.dart" -exec wc -l {} + | sort -rn | head -11 | tail -10 | while read -r line count file; do
+find lib -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -exec wc -l {} + | sort -rn | head -11 | tail -10 | while read -r line file; do
     if [ "$line" -gt 500 ]; then
         echo -e "  ${RED}$line${NC} lines: $file"
     elif [ "$line" -gt 400 ]; then
@@ -113,54 +108,40 @@ done
 echo ""
 
 # ============================================================
-# CHECK 4: Clean Architecture Validation
+# CHECK 4: Layer dependency rule
 # ============================================================
-echo -e "${BLUE}🏗️  CHECK 4: Clean Architecture Validation${NC}"
+echo -e "${BLUE}🏗️  CHECK 4: Layer dependency rule${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 ARCHITECTURE_ISSUES=0
 
-# Check for widgets not in proper folders
-while IFS= read -r file; do
-    if [[ "$file" == lib/*.dart ]] && [[ "$file" != lib/main.dart ]]; then
-        # Check if it's in a proper subfolder
-        if [[ "$file" != lib/models/* ]] && [[ "$file" != lib/services/* ]] && \
-           [[ "$file" != lib/screens/* ]] && [[ "$file" != lib/constants/* ]] && \
-           [[ "$file" != lib/utils/* ]]; then
-
-            # Check if it's a widget
-            if grep -q "class.*extends.*Widget" "$file"; then
-                echo -e "${YELLOW}⚠️  Widget in root: $file${NC}"
-                ARCHITECTURE_ISSUES=$((ARCHITECTURE_ISSUES + 1))
-            fi
-        fi
+# Prints the imports in $1 that match the pattern $2, and counts them.
+check_imports() {
+    local files="$1" pattern="$2" rule="$3"
+    local hits
+    hits=$(grep -nE "^import '.*($pattern)" $files 2>/dev/null)
+    if [ -n "$hits" ]; then
+        echo -e "${RED}❌ $rule${NC}"
+        echo "$hits" | sed 's/^/    /'
+        ARCHITECTURE_ISSUES=$((ARCHITECTURE_ISSUES + $(echo "$hits" | wc -l)))
     fi
-done < <(find lib -name "*.dart" -type f)
+}
 
-# Check for large screen files without widget subfolders
-while IFS= read -r file; do
-    LINE_COUNT=$(wc -l < "$file" | tr -d ' ')
+DOMAIN_FILES=$(find lib/features -path "*/domain/*" -name "*.dart" ! -name "*.freezed.dart")
+DATA_FILES=$(find lib/features -path "*/data/*" -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart")
+CORE_FILES=$(find lib/core -name "*.dart")
 
-    if [ "$LINE_COUNT" -gt 300 ]; then
-        DIR=$(dirname "$file")
-        BASENAME=$(basename "$file" .dart)
-        WIDGET_DIR="$DIR/widgets"
-
-        if [ ! -d "$WIDGET_DIR" ] && grep -q "StatefulWidget\|StatelessWidget" "$file"; then
-            echo -e "${YELLOW}⚠️  Large screen without widgets/: $file ($LINE_COUNT lines)${NC}"
-            ARCHITECTURE_ISSUES=$((ARCHITECTURE_ISSUES + 1))
-        fi
-    fi
-done < <(find lib/screens -name "*.dart" -type f 2>/dev/null)
+check_imports "$DOMAIN_FILES" "package:flutter/|flutter_riverpod|package:hive|package:http|/data/|/presentation/" \
+    "domain must stay pure Dart (no Flutter, Riverpod, Hive, HTTP, data or presentation)"
+check_imports "$DATA_FILES" "/presentation/|flutter_riverpod" \
+    "data must not depend on presentation or Riverpod"
+check_imports "$CORE_FILES" "switchon_diet/features/|switchon_diet/app/" \
+    "core must not depend on features or app"
 
 if [ "$ARCHITECTURE_ISSUES" -eq 0 ]; then
-    echo -e "${GREEN}✅ Clean Architecture principles followed${NC}"
+    echo -e "${GREEN}✅ Dependencies point inwards${NC}"
 else
-    echo ""
-    echo -e "${YELLOW}💡 Suggestions:${NC}"
-    echo "   - Move widgets to lib/screens/*/widgets/"
-    echo "   - Extract large widgets into separate files"
-    echo "   - Follow the folder structure in docs/CODING_GUIDELINES.md"
+    TOTAL_ISSUES=$((TOTAL_ISSUES + ARCHITECTURE_ISSUES))
 fi
 
 echo ""
@@ -197,7 +178,7 @@ if [ "$TOTAL_ISSUES" -eq 0 ]; then
     echo "Your code meets all quality standards:"
     echo "  ✅ No Flutter analyze issues"
     echo "  ✅ All files under 500 lines"
-    echo "  ✅ Clean Architecture principles followed"
+    echo "  ✅ Layer dependency rule respected"
     echo ""
     echo "You can safely commit your changes!"
 else
@@ -208,7 +189,7 @@ else
     echo "Quick fixes:"
     echo "  1. Run: flutter analyze"
     echo "  2. Fix the warnings and split oversized files (see docs/CODING_GUIDELINES.md)"
-    echo "  3. Re-run: ./check_quality.sh"
+    echo "  3. Re-run: ./scripts/check_quality.sh"
 fi
 
 echo ""

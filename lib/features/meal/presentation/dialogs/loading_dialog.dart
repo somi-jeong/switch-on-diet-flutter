@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 void showLoadingDialog(BuildContext context, String message) {
-  showDialog(
+  showDialog<void>(
     context: context,
     barrierDismissible: false,
     builder: (context) => Center(

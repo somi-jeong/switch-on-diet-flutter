@@ -7,11 +7,11 @@ ANTHROPIC_API_KEY ?=
 
 help:
 	@echo "make setup    - create .env from .env.example and fetch packages"
-	@echo "make codegen  - regenerate Hive adapters (*.g.dart)"
+	@echo "make codegen  - regenerate Hive adapters and Freezed classes"
 	@echo "make run      - flutter run with ANTHROPIC_API_KEY passed via --dart-define"
 	@echo "make analyze  - static analysis"
 	@echo "make test     - unit tests"
-	@echo "make check    - analyze + file-size + structure report"
+	@echo "make check    - analyze + file-size + layer dependency report"
 	@echo "make format   - dart format lib/"
 	@echo "make clean    - flutter clean"
 
@@ -32,7 +32,7 @@ test:
 	$(FLUTTER) test
 
 check:
-	./scripts/check_quality.sh
+	FLUTTER=$(FLUTTER) ./scripts/check_quality.sh
 
 format:
 	./scripts/format_all.sh
