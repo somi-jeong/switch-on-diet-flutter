@@ -1,76 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:switchon_diet/core/di/core_providers.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/clock.dart';
-import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/features/coach/presentation/coach_sheet/ai_coach_bottom_sheet.dart';
-import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
-import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
+import 'package:switchon_diet/features/diet_record/presentation/today/today_state.dart';
+import 'package:switchon_diet/features/diet_record/presentation/today/today_view_model.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/today_after_wake_view.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/today_before_wake_view.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/today_header.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/today_widgets.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/wake_time_sheet.dart';
-import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
-import 'package:switchon_diet/features/settings/domain/entities/app_settings.dart';
-import 'package:switchon_diet/features/settings/settings_providers.dart';
 
-class TodayTab extends ConsumerStatefulWidget {
-  final VoidCallback? onDataChanged;
-
-  const TodayTab({super.key, this.onDataChanged});
+class TodayTab extends ConsumerWidget {
+  const TodayTab({super.key});
 
   @override
-  ConsumerState<TodayTab> createState() => _TodayTabState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ref
+        .watch(todayViewModelProvider)
+        .when(
+          skipLoadingOnReload: true,
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, _) => const Center(child: Text('데이터를 불러올 수 없습니다')),
+          data: (state) => _TodayContent(state: state),
+        );
+  }
 }
 
-class _TodayTabState extends ConsumerState<TodayTab> {
-  DietRecord? _record;
-  AppSettings? _settings;
-  bool _loading = true;
-  int _todayIdx = 1;
-  int _week = 1;
+class _TodayContent extends ConsumerWidget {
+  const _TodayContent({required this.state});
 
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  final TodayState state;
 
-  Future<void> _load() async {
-    final settings = ref.read(settingsProvider);
-    if (settings == null || settings.startDate.isEmpty) {
-      setState(() => _loading = false);
-      return;
-    }
-    _settings = settings;
-    final now = const JstClock().now();
-    _todayIdx = ChallengeCalendar.fromIsoDate(settings.startDate).dayAt(now);
-    _week = ChallengeCalendar.weekOf(_todayIdx);
-    final records = ref.read(dietRecordRepositoryProvider);
-    var record = records.get(_todayIdx);
-    if (record == null) {
-      record = DietRecord(date: Jst.isoDate(now));
-      await records.save(_todayIdx, record);
-    }
-    setState(() {
-      _record = record;
-      _loading = false;
-    });
-  }
-
-  Future<void> _saveWakeTime(DateTime wakeTime) async {
-    if (_record == null) return;
-    final updated = await ref
-        .read(recordWakeTimeProvider)
-        .call(day: _todayIdx, wakeTime: wakeTime);
-    setState(() => _record = updated);
-    widget.onDataChanged?.call();
-  }
-
-  Future<void> _showWakeTimeEditSheet() async {
-    final result = await showModalBottomSheet<DateTime>(
+  Future<void> _editWakeTime(BuildContext context, WidgetRef ref) async {
+    final viewModel = ref.read(todayViewModelProvider.notifier);
+    final wakeTime = await showModalBottomSheet<DateTime>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -79,56 +42,18 @@ class _TodayTabState extends ConsumerState<TodayTab> {
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         child: WakeTimeSheet(
-          now: ref.read(clockProvider).now(),
-          previousBedTime: ref
-              .read(dietRecordRepositoryProvider)
-              .get(_todayIdx - 1)
-              ?.bedTime,
+          now: state.now,
+          previousBedTime: state.yesterday?.bedTime,
         ),
       ),
     );
-
-    if (result != null && mounted) {
-      await _saveWakeTime(result);
-    }
-  }
-
-  String _fastingText() {
-    if (_record?.wakeTime == null) return '--';
-    final wake = Jst.parse(_record!.wakeTime!);
-    final now = const JstClock().now();
-    final diff = now.difference(wake);
-    if (diff.isNegative) return '--';
-    final hours = diff.inHours;
-    final mins = diff.inMinutes % 60;
-    return '${hours}h ${mins}m';
-  }
-
-  bool _checkMissedBedtime() {
-    final yesterdayIdx = _todayIdx - 1;
-    if (yesterdayIdx < 1) return false;
-
-    final yesterdayRecord = ref
-        .read(dietRecordRepositoryProvider)
-        .get(yesterdayIdx);
-    return yesterdayRecord != null &&
-        yesterdayRecord.wakeTime != null &&
-        (yesterdayRecord.bedTime == null || yesterdayRecord.bedTime!.isEmpty);
+    if (wakeTime != null) await viewModel.recordWakeTime(wakeTime);
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
-    if (_settings == null || _record == null) {
-      return const Center(child: Text('데이터를 불러올 수 없습니다'));
-    }
-    final hasWoken = _record!.wakeTime != null && _record!.wakeTime!.isNotEmpty;
-    final score = _record!.score;
-
-    // Calculate bottom navigation bar height including safe area
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-    final navBarHeight = 80 + bottomPadding; // 80 is the nav bar content height
-    final fabBottomPosition = navBarHeight + 24; // 24px margin above nav bar
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Keep the coach button above the bottom navigation bar (80pt + inset).
+    final fabBottom = 80 + MediaQuery.of(context).padding.bottom + 24;
 
     return Stack(
       children: [
@@ -136,37 +61,24 @@ class _TodayTabState extends ConsumerState<TodayTab> {
           child: Column(
             children: [
               TodayHeader(
-                todayIdx: _todayIdx,
-                week: _week,
-                hasWoken: hasWoken,
-                score: score,
-                fastingText: _fastingText(),
+                todayIdx: state.day,
+                week: state.week,
+                hasWoken: state.hasWoken,
+                score: state.record.score,
+                fastingText: state.fastingText,
               ),
               Expanded(
                 child: Container(
                   color: kBgColor,
-                  child: hasWoken
+                  child: state.hasWoken
                       ? TodayAfterWakeView(
-                          record: _record!,
-                          todayIdx: _todayIdx,
-                          fastingText: _fastingText(),
-                          onRefresh: () {
-                            _load();
-                            widget.onDataChanged?.call();
-                          },
-                          onWakeTimeEdit: _showWakeTimeEditSheet,
+                          state: state,
+                          onWakeTimeEdit: () => _editWakeTime(context, ref),
                         )
                       : TodayBeforeWakeView(
-                          todayIdx: _todayIdx,
-                          hasMissedBedtime: _checkMissedBedtime(),
-                          yesterdayIdx: _todayIdx - 1,
-                          onWakeTimeRecorded: () async =>
-                              await _saveWakeTime(const JstClock().now()),
-                          onMissedBedtimeRecorded: () {
-                            setState(() {});
-                            widget.onDataChanged?.call();
-                          },
-                          onShowWakeTimeEditSheet: _showWakeTimeEditSheet,
+                          state: state,
+                          onShowWakeTimeEditSheet: () =>
+                              _editWakeTime(context, ref),
                         ),
                 ),
               ),
@@ -174,17 +86,16 @@ class _TodayTabState extends ConsumerState<TodayTab> {
           ),
         ),
         Positioned(
-          bottom: fabBottomPosition,
+          bottom: fabBottom,
           right: 20,
           child: TodayFabButton(
-            onTap: () => showModalBottomSheet(
+            onTap: () => showModalBottomSheet<void>(
               context: context,
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
               builder: (_) => AiCoachBottomSheet(
-                todayDate: _record!.date,
-                todayIdx: _todayIdx,
-                startDate: _settings!.startDate,
+                todayDate: state.record.date,
+                todayIdx: state.day,
               ),
             ),
           ),

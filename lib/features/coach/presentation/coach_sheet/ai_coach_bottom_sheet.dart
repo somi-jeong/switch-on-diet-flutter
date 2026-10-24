@@ -15,13 +15,11 @@ import 'package:switchon_diet/features/diet_record/domain/entities/meal_verdict.
 class AiCoachBottomSheet extends ConsumerStatefulWidget {
   final String todayDate;
   final int todayIdx;
-  final String startDate;
 
   const AiCoachBottomSheet({
     super.key,
     required this.todayDate,
     required this.todayIdx,
-    required this.startDate,
   });
 
   @override

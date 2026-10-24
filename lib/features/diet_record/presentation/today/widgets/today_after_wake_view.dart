@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:switchon_diet/core/time/clock.dart';
-import 'package:switchon_diet/core/time/jst.dart';
-import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
-import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
+import 'package:switchon_diet/features/diet_record/presentation/today/today_state.dart';
+import 'package:switchon_diet/features/diet_record/presentation/today/today_view_model.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/ai_feedback_card.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/bedtime_card.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/daily_missions_card.dart';
@@ -16,143 +14,85 @@ import 'package:switchon_diet/features/meal/presentation/dialogs/missed_meal_tim
 import 'package:switchon_diet/features/meal/presentation/dialogs/skip_reason_dialog.dart';
 import 'package:switchon_diet/features/meal/presentation/dialogs/skip_warning_dialog.dart';
 import 'package:switchon_diet/features/meal/presentation/record_meal_screen.dart';
-import 'package:switchon_diet/features/program/domain/meal_schedule.dart';
 
-/// The main view shown after the user has recorded their wake time.
-/// Displays today's progress, daily missions, meals timeline, and bedtime tracking.
+/// The view shown after the wake-up time is logged: progress, daily missions,
+/// the meal timeline and bedtime.
 class TodayAfterWakeView extends ConsumerWidget {
-  final DietRecord record;
-  final int todayIdx;
-  final String fastingText;
-  final VoidCallback onRefresh;
+  final TodayState state;
   final VoidCallback onWakeTimeEdit;
 
   const TodayAfterWakeView({
     super.key,
-    required this.record,
-    required this.todayIdx,
-    required this.fastingText,
-    required this.onRefresh,
+    required this.state,
     required this.onWakeTimeEdit,
   });
 
-  Future<void> _toggleDailyMission(WidgetRef ref, String mission) => ref
-      .read(dietRecordRepositoryProvider)
-      .save(todayIdx, record.toggleMission(mission));
-
-  Future<void> _handleRecordMeal(BuildContext context, MealRecord meal) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
+  /// [existing] pre-fills the form and enables deleting the entry.
+  void _openRecordMeal(
+    BuildContext context,
+    String label, {
+    MealRecord? existing,
+  }) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
         builder: (context) => RecordMealScreen(
-          mealType: meal.label,
-          day: todayIdx,
-          existingMeal: meal.checked ? meal : null,
-          onBack: () {
-            Navigator.of(context).pop();
-            onRefresh();
-          },
+          mealType: label,
+          day: state.day,
+          existingMeal: existing,
+          onBack: () => Navigator.of(context).pop(),
         ),
       ),
     );
   }
 
-  Future<void> _handleSkipMeal(
+  Future<void> _skipMeal(
     BuildContext context,
     WidgetRef ref,
     MealRecord meal,
   ) async {
-    final result = await showSkipWarningDialog(context);
+    final viewModel = ref.read(todayViewModelProvider.notifier);
+    final confirmed = await showSkipWarningDialog(context);
+    if (confirmed != true || !context.mounted) return;
 
-    if (result == true) {
-      if (!context.mounted) return;
-
-      // 스킵 이유 입력
-      final reason = await showSkipReasonDialog(context, meal.label);
-      if (!context.mounted) return;
-
-      final updated = record.updateMeal(
-        meal.label,
-        (meal) => MealRecord(
-          label: meal.label,
-          skipped: true,
-          guideText: meal.guideText,
-          skipReason: reason,
-        ),
-      );
-      await ref.read(dietRecordRepositoryProvider).save(todayIdx, updated);
-    }
+    final reason = await showSkipReasonDialog(context, meal.label);
+    await viewModel.skipMeal(meal.label, reason: reason);
   }
 
-  Future<void> _handleRecordMissedMeal(
+  Future<void> _recordLateMeal(
     BuildContext context,
-    int index,
+    WidgetRef ref,
     MealRecord meal,
   ) async {
-    final recommendedTime = MealSchedule.recommendedTime(
-      wakeTime: Jst.parse(record.wakeTime!),
-      label: meal.label,
-    );
-
+    final viewModel = ref.read(todayViewModelProvider.notifier);
     final selectedTime = await showMissedMealTimeDialog(
       context,
       mealLabel: meal.label,
-      wakeTimeIso: record.wakeTime!,
-      recommendedTime: recommendedTime,
+      wakeTimeIso: state.record.wakeTime!,
+      recommendedTime: viewModel.recommendedTimeFor(meal.label),
     );
+    if (selectedTime == null || !context.mounted) return;
 
-    debugPrint('[MissedMeal] Selected time: $selectedTime');
+    final reason = await showLateReasonDialog(context, meal.label);
+    if (!context.mounted) return;
 
-    if (selectedTime != null && context.mounted) {
-      // 늦게 입력 이유 받기
-      final reason = await showLateReasonDialog(context, meal.label);
-      if (!context.mounted) return;
-
-      debugPrint('[MissedMeal] Late reason: $reason');
-
-      // Create updated meal with selected time and late reason
-      final now = const JstClock().now();
-      final timeParts = selectedTime.split(':');
-      final selectedDateTime = DateTime(
-        now.year,
-        now.month,
-        now.day,
-        int.parse(timeParts[0]),
-        int.parse(timeParts[1]),
-      );
-
-      final updatedMeal = MealRecord(
-        label: meal.label,
-        guideText: meal.guideText,
-        eatenAt: selectedDateTime.toIso8601String(),
-        lateReason: reason,
-      );
-
-      debugPrint('[MissedMeal] Updated meal with time: ${updatedMeal.eatenAt}');
-
-      // Navigate to record meal screen with pre-filled data
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => RecordMealScreen(
-            mealType: meal.label,
-            day: todayIdx,
-            existingMeal: updatedMeal,
-            onBack: () {
-              Navigator.of(context).pop();
-              onRefresh();
-            },
-          ),
-        ),
-      );
-    }
+    final [hour, minute] = selectedTime.split(':').map(int.parse).toList();
+    _openRecordMeal(
+      context,
+      meal.label,
+      existing: viewModel.lateEntryFor(
+        meal,
+        eatenAt: TimeOfDay(hour: hour, minute: minute),
+        reason: reason,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final wake = Jst.parse(record.wakeTime!);
-    final wakeHour = wake.hour;
+    final wake = state.wakeTime!;
+    final record = state.record;
 
-    // 17시 이후 기상: 다이어트 진행 불가
-    if (wakeHour >= 17) {
+    if (state.isDayLost) {
       return SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -162,7 +102,7 @@ class TodayAfterWakeView extends ConsumerWidget {
             TopInfoCard(
               wakeTime: wake,
               score: record.score,
-              dayIdx: todayIdx,
+              dayIdx: state.day,
               onWakeTimeEdit: onWakeTimeEdit,
             ),
             const SizedBox(height: 24),
@@ -222,29 +162,6 @@ class TodayAfterWakeView extends ConsumerWidget {
       );
     }
 
-    // 다음 식사 찾기 (시간 지나지 않은 첫 번째 미완료 식사)
-    int? nextMealIndex;
-    for (int i = 0; i < record.meals.length; i++) {
-      final meal = record.meals[i];
-      if (meal.checked || meal.skipped) continue;
-
-      // 시간이 지났는지 확인
-      final isPassed = MealSchedule.isWindowPassed(
-        wakeTime: wake,
-        label: meal.label,
-        now: const JstClock().now(),
-      );
-
-      if (!isPassed) {
-        nextMealIndex = i;
-        break;
-      }
-    }
-
-    debugPrint(
-      '[TodayAfterWake] Next meal index: $nextMealIndex, Current time: ${const JstClock().now()}',
-    );
-
     return Stack(
       children: [
         // 타임라인 연결선
@@ -270,64 +187,49 @@ class TodayAfterWakeView extends ConsumerWidget {
               TopInfoCard(
                 wakeTime: wake,
                 score: record.score,
-                dayIdx: todayIdx,
+                dayIdx: state.day,
                 onWakeTimeEdit: onWakeTimeEdit,
               ),
               const SizedBox(height: 16),
               // Daily Missions Checklist
               DailyMissionsCard(
                 record: record,
-                onToggleMission: (mission) => _toggleDailyMission(ref, mission),
+                onToggleMission: (value) => ref
+                    .read(todayViewModelProvider.notifier)
+                    .toggleMission(value),
               ),
               const SizedBox(height: 16),
               // Fasting Timer Card
-              FastingTimerCard(fastingText: fastingText),
+              FastingTimerCard(fastingText: state.fastingText),
               const SizedBox(height: 24),
               // Meals Timeline (per-meal states)
-              ...record.meals.asMap().entries.map((entry) {
-                final index = entry.key;
-                final meal = entry.value;
-
-                // Check if meal time has passed
-                final isMissed =
-                    !meal.checked &&
-                    !meal.skipped &&
-                    MealSchedule.isWindowPassed(
-                      wakeTime: wake,
-                      label: meal.label,
-                      now: const JstClock().now(),
-                    );
-
-                // isNext는 시간 안 지난 첫 번째 미완료 식사
-                final isNext = index == nextMealIndex && !isMissed;
-
-                debugPrint(
-                  '[Meal ${meal.label}] isMissed=$isMissed, isNext=$isNext, checked=${meal.checked}, skipped=${meal.skipped}',
-                );
-
-                return MealCard(
-                  meal: meal,
-                  isNext: isNext,
-                  isMissed: isMissed,
-                  onRecord: isNext
-                      ? () => _handleRecordMeal(context, meal)
+              for (final item in state.timeline)
+                MealCard(
+                  meal: item.meal,
+                  isNext: item.isNext,
+                  isMissed: item.isMissed,
+                  onRecord: item.isNext
+                      ? () => _openRecordMeal(context, item.meal.label)
                       : null,
-                  onSkip: isNext
-                      ? () => _handleSkipMeal(context, ref, meal)
+                  onSkip: item.isNext
+                      ? () => _skipMeal(context, ref, item.meal)
                       : null,
-                  onEdit: meal.checked
-                      ? () => _handleRecordMeal(context, meal)
+                  onEdit: item.meal.checked
+                      ? () => _openRecordMeal(
+                          context,
+                          item.meal.label,
+                          existing: item.meal,
+                        )
                       : null,
-                  onRecordLate: isMissed
-                      ? () => _handleRecordMissedMeal(context, index, meal)
+                  onRecordLate: item.isMissed
+                      ? () => _recordLateMeal(context, ref, item.meal)
                       : null,
-                );
-              }),
+                ),
               // Bedtime Card
               BedtimeCard(
-                record: record,
-                todayIdx: todayIdx,
-                onBedtimeRecorded: onRefresh,
+                onBedtimeSelected: (value) => ref
+                    .read(todayViewModelProvider.notifier)
+                    .recordBedtime(value),
               ),
               const SizedBox(height: 24),
               // AI Coach Feedback Card

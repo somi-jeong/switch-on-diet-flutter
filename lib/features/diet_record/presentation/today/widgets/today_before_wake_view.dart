@@ -1,34 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/clock.dart';
-import 'package:switchon_diet/core/utils/time_validator.dart';
 import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/dialogs/wake_dialogs.dart';
+import 'package:switchon_diet/features/diet_record/presentation/today/today_state.dart';
+import 'package:switchon_diet/features/diet_record/presentation/today/today_view_model.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/meal_card/meal_card.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/missed_bedtime_banner.dart';
 
 /// The view shown before the user records their wake time.
 /// Displays a wake-up card with late time warnings and locked meal placeholders.
-class TodayBeforeWakeView extends StatelessWidget {
-  final int todayIdx;
-  final bool hasMissedBedtime;
-  final int yesterdayIdx;
-  final VoidCallback onWakeTimeRecorded;
-  final VoidCallback onMissedBedtimeRecorded;
+class TodayBeforeWakeView extends ConsumerWidget {
+  final TodayState state;
   final Future<void> Function() onShowWakeTimeEditSheet;
 
   const TodayBeforeWakeView({
     super.key,
-    required this.todayIdx,
-    required this.hasMissedBedtime,
-    required this.yesterdayIdx,
-    required this.onWakeTimeRecorded,
-    required this.onMissedBedtimeRecorded,
+    required this.state,
     required this.onShowWakeTimeEditSheet,
   });
 
+  /// Logs "now" as the wake-up time, then explains why waking late matters
+  /// and offers to correct the time.
+  Future<void> _recordLateWakeUp(BuildContext context, WidgetRef ref) async {
+    final recording = ref
+        .read(todayViewModelProvider.notifier)
+        .recordWakeTimeNow();
+    final choice = await showAbnormalWakeTimeDialog(context);
+    await recording;
+    if (choice == 'edit') await onShowWakeTimeEditSheet();
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // 기상 전에도 빈 식사 목록 생성 (guideText 포함)
     final placeholderMeals = [
       const MealRecord(label: '아침', guideText: '기상 후 30~90분'),
@@ -37,10 +41,7 @@ class TodayBeforeWakeView extends StatelessWidget {
       const MealRecord(label: '저녁', guideText: '기상 후 9.5~10.5시간'),
     ];
 
-    // 기상 시간이 늦었는지 체크
-    final now = const JstClock().now();
-    final currentTime = TimeOfDay.fromDateTime(now);
-    final isCurrentLate = TimeValidator.isWakeTimeLate(currentTime);
+    final isCurrentLate = state.isWakeUpOverdue;
 
     return Stack(
       children: [
@@ -64,10 +65,11 @@ class TodayBeforeWakeView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 어제 취침 누락 배너
-              if (hasMissedBedtime)
+              if (state.hasMissedBedtime)
                 MissedBedtimeBanner(
-                  yesterdayIdx: yesterdayIdx,
-                  onRecorded: onMissedBedtimeRecorded,
+                  onBedtimeSelected: (value) => ref
+                      .read(todayViewModelProvider.notifier)
+                      .recordMissedBedtime(value),
                 ),
               // Wake Up Card (with late-time check)
               Container(
@@ -127,16 +129,7 @@ class TodayBeforeWakeView extends StatelessWidget {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: () async {
-                                onWakeTimeRecorded();
-                                if (context.mounted) {
-                                  final result =
-                                      await showAbnormalWakeTimeDialog(context);
-                                  if (result == 'edit' && context.mounted) {
-                                    await onShowWakeTimeEditSheet();
-                                  }
-                                }
-                              },
+                              onPressed: () => _recordLateWakeUp(context, ref),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: kRose500,
                                 foregroundColor: Colors.white,
@@ -194,7 +187,9 @@ class TodayBeforeWakeView extends StatelessWidget {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: onWakeTimeRecorded,
+                          onPressed: () => ref
+                              .read(todayViewModelProvider.notifier)
+                              .recordWakeTimeNow(),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: kPrimaryMint,
                             foregroundColor: kDarkSlate,

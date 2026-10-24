@@ -1,27 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/clock.dart';
-import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
-import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/dialogs/bedtime_dialogs.dart';
 
 /// A card for recording bedtime.
 /// Encourages users to sleep before midnight for optimal health.
-class BedtimeCard extends ConsumerWidget {
-  final DietRecord record;
-  final int todayIdx;
-  final VoidCallback onBedtimeRecorded;
+class BedtimeCard extends StatelessWidget {
+  final ValueChanged<TimeOfDay> onBedtimeSelected;
 
-  const BedtimeCard({
-    super.key,
-    required this.record,
-    required this.todayIdx,
-    required this.onBedtimeRecorded,
-  });
+  const BedtimeCard({super.key, required this.onBedtimeSelected});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Row(
@@ -117,26 +106,8 @@ class BedtimeCard extends ConsumerWidget {
                             final selectedTime = await showTodayBedtimeModal(
                               context,
                             );
-                            if (selectedTime != null && context.mounted) {
-                              // 오늘 날짜의 bedTime 저장
-                              final now = const JstClock().now();
-                              final bedtimeDateTime = DateTime(
-                                now.year,
-                                now.month,
-                                now.day,
-                                selectedTime.hour,
-                                selectedTime.minute,
-                              );
-                              await ref
-                                  .read(dietRecordRepositoryProvider)
-                                  .save(
-                                    todayIdx,
-                                    record.copyWith(
-                                      bedTime: bedtimeDateTime
-                                          .toIso8601String(),
-                                    ),
-                                  );
-                              onBedtimeRecorded();
+                            if (selectedTime != null) {
+                              onBedtimeSelected(selectedTime);
                             }
                           },
                           icon: const Icon(Icons.check, size: 16),

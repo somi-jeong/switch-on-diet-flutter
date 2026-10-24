@@ -1,24 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/clock.dart';
-import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/dialogs/bedtime_dialogs.dart';
 
 /// Banner that appears when the user missed recording bedtime yesterday.
 /// Allows recording missed bedtime to maintain accurate sleep tracking.
-class MissedBedtimeBanner extends ConsumerWidget {
-  final int yesterdayIdx;
-  final VoidCallback onRecorded;
+class MissedBedtimeBanner extends StatelessWidget {
+  final ValueChanged<TimeOfDay> onBedtimeSelected;
 
-  const MissedBedtimeBanner({
-    super.key,
-    required this.yesterdayIdx,
-    required this.onRecorded,
-  });
+  const MissedBedtimeBanner({super.key, required this.onBedtimeSelected});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 16),
@@ -66,29 +58,7 @@ class MissedBedtimeBanner extends ConsumerWidget {
           ElevatedButton(
             onPressed: () async {
               final selectedTime = await showMissedBedtimeModal(context);
-              if (selectedTime != null && context.mounted) {
-                // 어제 날짜의 bedTime 저장
-                final records = ref.read(dietRecordRepositoryProvider);
-                final yesterdayRecord = records.get(yesterdayIdx);
-                if (yesterdayRecord != null) {
-                  final now = const JstClock().now();
-                  final yesterday = now.subtract(const Duration(days: 1));
-                  final bedtimeDateTime = DateTime(
-                    yesterday.year,
-                    yesterday.month,
-                    yesterday.day,
-                    selectedTime.hour,
-                    selectedTime.minute,
-                  );
-                  await records.save(
-                    yesterdayIdx,
-                    yesterdayRecord.copyWith(
-                      bedTime: bedtimeDateTime.toIso8601String(),
-                    ),
-                  );
-                  onRecorded();
-                }
-              }
+              if (selectedTime != null) onBedtimeSelected(selectedTime);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: kIndigo500,
