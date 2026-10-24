@@ -1,129 +1,130 @@
-# 스위치온 다이어트 앱 - 설계 문서 (한국어)
+# 스위치온 다이어트 앱 설계 문서
 
 28일(4주) 스위치온 다이어트 챌린지를 기록하고 AI 코칭을 받는 Flutter 앱입니다.
-모든 데이터는 기기(Hive)에 저장되며, 외부로 나가는 통신은 Claude API 호출뿐입니다.
+데이터는 모두 기기(Hive)에 저장되고, 외부와 통신하는 것은 Claude API 호출뿐입니다.
 
-## 기술 스택
+## 1. 구조 한눈에 보기
 
-| 항목 | 기술 |
-|---|---|
-| 프레임워크 | Flutter 3.35+ (Dart 3.8+), Material 3 |
-| 상태 | `ProviderScope`(flutter_riverpod) + `StatefulWidget` |
-| 로컬 DB | Hive / hive_flutter, 어댑터는 hive_generator로 생성 (`*.g.dart` 커밋됨) |
-| AI | Anthropic Messages API (`http`, 모델 `claude-haiku-4-5`) |
-| 시간 | timezone (Asia/Tokyo 고정), intl |
-| 설정 | `--dart-define=ANTHROPIC_API_KEY` 또는 `.env`(flutter_dotenv) |
-| 알림 | flutter_local_notifications (시작 시 초기화, 식사 알림 스케줄러는 `NotificationService`에 구현) |
+**Clean Architecture로 레이어를 나누고, 화면은 MVVM**으로 구성했습니다. 폴더는 기능(feature) 단위로 나누고,
+각 기능 안에서 다시 레이어를 나눕니다.
 
-## 폴더 구조
+| 레이어 | 들어 있는 것 | 의존할 수 있는 대상 |
+|---|---|---|
+| presentation | View(위젯), ViewModel(Riverpod `Notifier`/`AsyncNotifier`), 화면 상태(Freezed) | domain, core |
+| domain | 엔티티(Freezed), 리포지토리 인터페이스, 유스케이스, 프로그램 규칙 | core의 순수 Dart 코드 |
+| data | Hive 모델·매퍼, 리포지토리 구현, 데이터 소스(Hive 박스, Anthropic API) | domain, core |
+
+**의존성 규칙**: 의존성은 항상 domain 쪽을 향합니다.
+
+- domain은 Flutter, Riverpod, Hive, HTTP를 import하지 않습니다.
+- data는 presentation을 모릅니다.
+- core는 feature를 모릅니다.
+
+`scripts/check_quality.sh`가 이 규칙을 검사합니다.
+의존성 연결은 기능마다 하나씩 있는 `<feature>_providers.dart`에서 합니다.
+`app/bootstrap.dart`가 앱 시작 시 Hive 박스를 열어 provider override로 넘깁니다.
+
+## 2. 폴더 구조
 
 ```
 lib/
-├── main.dart                    # env → timezone → Hive → 알림 초기화, 온보딩/메인 분기
-├── constants/
-│   ├── colors.dart              # 컬러 토큰
-│   ├── diet_data.dart           # 주차별 허용/금지 식품, 단계 정보
-│   └── meal_offsets.dart        # 기상 기준 식사 시간대(분)
-├── models/                      # Hive 타입 (DietRecord, MealRecord, AppSettings, ChatMessage)
-│   └── coach_action.dart        # AI 응답의 <ACTION> 태그 파서
-├── services/
-│   ├── claude_service.dart      # 기능별 AI 호출 + 토큰 예산
-│   ├── prompts/                 # 시스템/유저 프롬프트 생성
-│   ├── parsers/                 # HTTP 클라이언트, 응답 파싱
-│   ├── coach_action_processor.dart  # 코치 액션 → 기록 반영
-│   ├── daily_analysis_service.dart  # 하루 피드백 자동 생성
-│   ├── weekly_analysis_service.dart # 주간 요약 자동 생성
-│   ├── meal_timing_service.dart     # 식사 시간대 계산
-│   ├── jst_service.dart             # JST 시간 유틸
-│   ├── notification_service.dart
-│   └── storage_service.dart         # Hive 박스 접근 단일 창구
-├── screens/
-│   ├── onboarding_screen.dart
-│   ├── main_screen.dart         # 하단 탭 셸, 앱 재개 시 데이터 재로드
-│   ├── tabs/                    # 오늘 / 캘린더 / 식단 / 마이 + 위젯
-│   ├── record_meal_screen.dart  # 텍스트 식사 기록 + AI 판정
-│   ├── ai_coach_bottom_sheet.dart
-│   ├── chat_history_screen.dart, chat_detail/  # 코치 히스토리
-│   ├── diet_history_screen.dart, diet_history/ # 식단·수면 기록
-│   ├── past_date_meal_selection_screen.dart    # 지난 날짜 소급 입력
-│   └── dialogs/                 # 기상·취침·식사·설정 다이얼로그
-└── utils/time_validator.dart    # 기상/취침/수면 시간 규칙
+├── main.dart                 # bootstrap() → ProviderScope(overrides) → SwitchOnDietApp
+├── app/                      # 앱 루트(온보딩/메인 분기), bootstrap, 하단 탭 셸
+├── core/                     # config(API 키), di, theme, time(Clock/JstClock), utils
+└── features/
+    ├── program/              # 프로그램 규칙: ChallengeCalendar, MealSchedule, FoodRules, ProgramPhase + 식단 탭
+    ├── diet_record/          # 하루 기록: 오늘 탭, 캘린더, 식단·수면 기록, 지난 날짜 입력
+    ├── meal/                 # 식사 기록과 AI 판정, 식사 알림
+    ├── coach/                # AI 코치 대화, 코치 히스토리, Claude 연동(data)
+    ├── analysis/             # 하루 피드백·주간 요약 자동 생성(유스케이스만 있음)
+    └── settings/             # 온보딩, 마이 페이지, 설정 변경, 초기화
 ```
 
-## 데이터 모델 (Hive)
+## 3. 화면 상태 (MVVM)
+
+- **View**는 상태를 그리고 사용자 이벤트를 ViewModel에 넘깁니다. 다이얼로그, 내비게이션, 스낵바처럼 `BuildContext`가 필요한 일만 View에 둡니다.
+- **ViewModel**은 Riverpod `Notifier`/`AsyncNotifier`입니다. 화면 하나 또는 항목 하나(`family`)마다 인스턴스가 생기고, 화면을 닫으면 `autoDispose`로 정리됩니다.
+- 로딩과 에러는 `AsyncValue`로 표현하고, 데이터 상태는 Freezed 클래스로 표현합니다.
+- 결과가 여러 갈래인 동작은 sealed union으로 돌려줍니다. 예를 들어 `RecordMealOutcome`은 `analyzed`, `analysisFailed`, `notFound` 중 하나입니다.
+- 기록을 쓰는 곳은 리포지토리 하나입니다. Hive 박스가 바뀌면 `dietRecordsProvider` 스트림이 다시 값을 내보내고, 그 스트림을 보는 ViewModel(오늘, 캘린더, 기록)이 모두 다시 계산됩니다. 그래서 다른 화면에 "새로고침하라"고 알릴 필요가 없습니다.
+- 캘린더와 식단 기록처럼 읽기만 하는 화면은 Notifier 대신 파생 `Provider`를 씁니다. 선택한 날짜 같은 일시적인 UI 상태는 위젯에 둡니다.
+
+| 화면 | ViewModel / 상태 |
+|---|---|
+| 오늘 | `TodayViewModel` → `TodayState` (공복 시간, 식사 타임라인, 취침 누락 배너) |
+| 식사 기록 | `RecordMealViewModel` (family: `RecordMealTarget`) → `RecordMealState`, `RecordMealOutcome` |
+| AI 코치 시트 / 대화 상세 | `CoachChatViewModel` (family: `CoachThread`) → `CoachChatState` |
+| 코치 히스토리 | `ChatHistoryViewModel` → `ChatHistoryState` |
+| 캘린더 / 식단·수면 기록 | `calendarProvider` → `CalendarState`, `dietHistoryProvider` → `DayHistory` |
+| 지난 날짜 입력 | `PastDayViewModel` (family: day) |
+| 설정 전체 | `SettingsNotifier` (`settingsProvider`) |
+
+## 4. 요청 흐름 예시: 식사 기록
+
+1. `RecordMealScreen` → `RecordMealViewModel.save()`
+2. `RecordMeal` 유스케이스가 먼저 `DietRecordRepository`에 식사를 저장합니다. AI가 실패해도 기록은 남깁니다.
+3. 이어서 `AiCoachRepository.analyzeMeal`을 호출합니다.
+4. `ClaudeAiCoachRepository`가 다음 순서로 처리합니다.
+   - `ClaudePromptBuilder`: 프롬프트 생성
+   - `AnthropicRemoteDataSource`: HTTP 요청. HTTP 오류는 여기서 `AiFailure`로 바꿉니다.
+   - `ClaudeResponseParser`: `STATUS`/`FEEDBACK` 파싱. 형식이 맞지 않으면 키워드로 판정하고, 그래도 안 되면 기본값을 씁니다.
+5. 판정을 기록에 다시 저장하면 Hive 변경 → `dietRecordsProvider` → 오늘 탭 순서로 화면이 갱신됩니다.
+6. View는 `RecordMealOutcome`을 보고 스낵바나 에러 다이얼로그를 띄웁니다.
+
+## 5. 유스케이스를 둔 기준
+
+유스케이스는 **로직이 있을 때만** 만듭니다. 단순한 읽기·쓰기는 ViewModel이 리포지토리를 바로 호출합니다.
+
+| 유스케이스 | 맡은 로직 |
+|---|---|
+| `RecordWakeTime` | 기상 시각에 맞춰 가능한 끼니 배치. 미션·취침·이미 기록한 끼니는 유지 |
+| `RecordMeal` | 저장 → AI 판정 → 판정 저장. 실패해도 기록은 유지 |
+| `SendCoachMessage` | 오늘·어제 기록으로 코치 컨텍스트 구성, 최근 3턴만 전송, 액션 반영 |
+| `ApplyCoachActions` | `<ACTION>` 태그(기상·식사·스킵·취침)를 기록에 반영 |
+| `GenerateDailyFeedback` / `GenerateWeeklySummary` | JST 시간 조건 확인, 하루 1회 생성, 리포트 통계 계산 |
+| `ResetChallenge` | 기록·채팅·설정 리포지토리를 모두 초기화 |
+
+`CoachGreeting`(코치 첫 인사)은 순수 함수라서 도메인 서비스로 둡니다.
+
+## 6. 데이터와 호환성
 
 | 박스 | 키 | 값 |
 |---|---|---|
-| `records` | dayIdx (1~28) | `DietRecord`: 날짜, 기상/취침 시간, 끼니 목록, 체중·체지방, 데일리 미션, AI 피드백, 주간 요약 |
-| `settings` | `'settings'` | `AppSettings`: 시작일, 이름, 알림 설정 |
-| `chat_json` | `chat_YYYY-MM-DD` | 날짜별 코치 대화(JSON 문자열) |
-| `day_summaries` | `summary_YYYY-MM-DD` | 날짜별 요약 (조회용) |
+| `records` | 일차(1~28) | `DietRecordModel` (typeId 0), 끼니는 `MealRecordModel` (typeId 1) |
+| `settings` | `'settings'` | `AppSettingsModel` (typeId 3) |
+| `chat_json` | `chat_YYYY-MM-DD` | 날짜별 대화(JSON 문자열) |
+| `day_summaries` | `summary_YYYY-MM-DD` | 날짜별 요약(조회만 함) |
 
-`MealRecord`에는 끼니 이름, 기록 여부, 음식 텍스트, AI 판정(`ALLOWED`/`WARNING`/`FORBIDDEN`)과 코멘트,
-식사 시각, 스킵 여부와 사유, 늦은 입력 사유가 들어갑니다.
+- 기존 Hive typeId와 `@HiveField` 번호를 그대로 썼습니다. 그래서 이미 저장된 데이터를 그대로 읽습니다.
+  - 기존 어댑터로 쓴 박스 파일을 `test/fixtures/legacy_boxes`에 두고 테스트로 확인합니다.
+- Hive 모델(data)과 엔티티(domain)를 분리하고, 매퍼로 변환합니다.
+  - AI 판정은 저장할 때는 `'ALLOWED'` 같은 문자열이고, 도메인에서는 `MealVerdict` enum입니다.
+- 쓰지 않는 예전 필드(`geminiApiKey`)는 설정을 저장할 때 그대로 보존합니다.
+- typeId 4(`ChatMessage`)는 등록만 되어 있었고 실제로 쓰인 적이 없어서 제거했습니다. 이 번호는 다시 쓰지 않습니다.
 
-달성률은 `DietRecord.score`에서 계산하며, 스킵한 끼니를 제외한 끼니 중 기록한 끼니의 비율입니다.
+## 7. 시간, AI, 설정
 
-## 핵심 흐름
+- **시간**: "지금"이 필요한 코드는 모두 `Clock`을 주입받습니다(`clockProvider`).
+  - `JstClock`은 Asia/Tokyo 기준이고, timezone DB를 쓸 수 없으면 UTC+9로 계산합니다.
+  - 테스트에서는 `FixedClock`을 씁니다.
+- **AI**: 기능마다 토큰 예산이 다릅니다(식사 판정 500 ~ 주간 요약 3,500).
+  - 실패는 `AiFailure`(network, rate limit, credit, server, unexpected, missing key) sealed class로 표현합니다.
+- **API 키**: `--dart-define=ANTHROPIC_API_KEY=...`가 `.env`보다 우선합니다. 키가 없어도 앱은 동작하고, AI 기능만 오류를 보여 줍니다.
+  - 클라이언트가 API를 직접 호출하므로, 공개 배포할 때는 프록시를 두는 것이 좋습니다.
 
-### 기상 기록
-1. 오늘 탭에서 기상 시간을 입력합니다. 이때 전날 취침 시간을 기준으로 수면 시간을 보여 주고, 6시간 미만이면 경고합니다.
-2. 기상 시각에 따라 가능한 끼니만 만듭니다.
-   - 09시 전: 4끼
-   - 09~11시: 아침 제외
-   - 11~14시: 점심·저녁
-   - 14~17시: 저녁
-   - 17시 이후: 없음
-3. 각 끼니의 시간대는 `meal_offsets`(기상 후 +30~90 / +210~270 / +390~450 / +570~630분)로 계산합니다.
+## 8. 테스트
 
-### 식사 기록
-1. 끼니 카드에서 먹은 음식을 텍스트로 입력합니다. 시간대가 지난 뒤에 입력하면 늦은 입력 사유를 받습니다.
-2. `ClaudeService.analyzeFoodText`가 이번 주 허용/금지 식품 목록을 기준으로 판정합니다.
-3. `ClaudeResponseParser.parseTextAnalysis`가 `STATUS:`/`FEEDBACK:` 줄을 읽고, 없으면 키워드로 판정합니다.
-4. 판정 결과를 `MealRecord`에 저장하고 타임라인에 배지로 표시합니다.
-5. 끼니를 스킵할 때는 사유를 입력합니다.
+- **domain**: 인메모리 리포지토리와 `FixedClock`으로 프로그램 규칙과 유스케이스를 검증합니다.
+- **presentation**: `ProviderContainer`에서 리포지토리와 시계를 override해 ViewModel을 검증합니다.
+  - 예: 기상 시간을 수정해도 데일리 미션이 유지되는지
+- **data**: 임시 디렉터리의 실제 Hive, 기존 포맷 fixture, `http` `MockClient`를 씁니다.
 
-### AI 코치
-1. 처음 열면 오늘 상태(미입력 끼니, 미완료 미션, 어제 달성률)로 인사말을 로컬에서 만듭니다.
-2. 메시지를 보낼 때마다 다음 내용을 시스템 프롬프트로 구성합니다.
-   - 일차·주차와 기상 시간
-   - 끼니 상태
-   - 이번 주 허용/금지 식품
-   - 어제 요약 한 줄
-3. 응답에 `<ACTION>WAKE:07:00</ACTION>`, `<ACTION>MEAL:아침:계란</ACTION>`, `<ACTION>SKIP:점심</ACTION>`,
-   `<ACTION>SLEEP:23:00</ACTION>` 태그가 있으면 `CoachAction.parseActions`가 추출해 화면 텍스트에서 지우고,
-   `CoachActionProcessor`가 해당 기록을 Hive에 반영합니다.
-4. 대화는 날짜별로 저장됩니다. 네트워크·요청 한도 오류가 나면 재시도 다이얼로그를 띄웁니다.
+`flutter test`로 85개 단위 테스트를 실행합니다. 위젯 테스트는 아직 없습니다.
 
-### 자동 분석 (서버 없이)
-`MainScreen`이 로드될 때(앱 시작·재개) 아래 조건을 확인합니다. 결과는 한 번만 생성해 기록에 저장합니다.
-- **하루 피드백**: 23:00~23:59 JST이고 오늘 기상 기록이 있을 때 → `DietRecord.aiFeedback`
-- **주간 요약**: 7·14·21·28일차 17:00~19:00 JST일 때 → `DietRecord.weeklySummary`
+## 9. 알려진 한계
 
-두 결과는 마이 탭 > AI 코치 히스토리에서 볼 수 있습니다.
+- 타임스탬프는 ISO 문자열로 저장합니다. 일부는 기기 로컬 `DateTime`으로 만들기 때문에, JST가 보장되는 것은 기기 시간대가 JST일 때뿐입니다.
+- 주간 요약은 생성해서 저장하지만, 히스토리 카드에는 고정 문구가 표시됩니다.
+- 식사 알림 스케줄러는 구현되어 있지만 UI에는 아직 연결되지 않았습니다.
 
-## 화면
-
-| 화면 | 내용 |
-|---|---|
-| 온보딩 | 챌린지 시작일 선택 |
-| 오늘 | 단계 안내 카드, 달성률, 데일리 미션(물·영양제·운동·수면), 공복 타이머(목표 14시간), 끼니 타임라인, 취침 기록, AI 코치 버튼 |
-| 캘린더 | 28일 그리드(완벽/주의/미입력), 진행률과 성장 배지, 선택한 날의 식단·규칙·AI 피드백, 지난 날짜 소급 입력 |
-| 식단 | 주차·단계별 식단 가이드(현재 단계 강조) |
-| 마이 | 기본 수칙, 식단 및 수면 기록, AI 코치 히스토리, 이름·시작일 변경, 데이터 초기화 |
-
-## 규칙
-
-- 시간은 항상 `JstService`를 거칩니다. `timezone` DB를 쓸 수 없으면 UTC+9로 대신 계산합니다.
-- Hive 접근은 `StorageService`에서만 합니다.
-- Hive 필드 번호(`@HiveField`)는 재사용하거나 바꾸지 않습니다.
-- 그 밖의 코드 규칙은 [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md)를 참고하세요.
-
-## API 키
-
-- 저장소에 키를 포함하지 않습니다. `--dart-define=ANTHROPIC_API_KEY=...`가 `.env`보다 우선합니다.
-- 클라이언트에서 직접 API를 호출하는 구조이므로, 배포할 때는 서버 프록시를 두는 것을 권장합니다.
-
-## 라이선스
-
-MIT License — 루트의 `LICENSE`를 참고하세요.
+코드 규칙은 [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md), 설계 결정 기록은 [`ARCHITECTURE_DECISIONS.md`](ARCHITECTURE_DECISIONS.md)에 있습니다.

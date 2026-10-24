@@ -73,63 +73,105 @@ The UI is in Korean, and all times are calculated in JST (Asia/Tokyo).
 
 ### Architecture
 
-The code is split into layers by folder. Screens and their widgets handle the UI flows. Dialogs live in `screens/dialogs/`.
-Services hold the rules, persistence, time handling and the AI client. Models are plain Hive types.
+The app follows MVVM on top of a Clean Architecture split. Code is grouped by feature, and every
+feature has up to three layers:
+
+- **presentation**: widgets (the *views*) and Riverpod `Notifier` / `AsyncNotifier` classes (the
+  *view models*). Views render an immutable state and forward user events; they never touch storage.
+- **domain**: Freezed entities, repository interfaces, use cases and the program rules. Pure Dart:
+  no Flutter, Riverpod, Hive or HTTP imports.
+- **data**: Hive models and mappers, repository implementations and data sources (Hive boxes, the
+  Anthropic Messages API).
 
 ```mermaid
-flowchart TD
-    subgraph Presentation["Presentation · lib/screens"]
-        Tabs["Today / Calendar / Diet / My tabs"]
-        Record["RecordMealScreen"]
-        Coach["AiCoachBottomSheet"]
-        History["Chat / diet history screens"]
+flowchart LR
+    subgraph presentation["presentation"]
+        View["Views<br/>TodayTab · RecordMealScreen · AiCoachBottomSheet …"]
+        VM["ViewModels<br/>Notifier / AsyncNotifier + Freezed state"]
+    end
+    subgraph domain["domain (pure Dart)"]
+        UC["Use cases<br/>RecordWakeTime · RecordMeal · SendCoachMessage<br/>GenerateDailyFeedback · GenerateWeeklySummary"]
+        Entities["Entities<br/>DietRecord · MealRecord · ChatMessage · CoachAction"]
+        Ports["Repository interfaces"]
+        Rules["Program rules<br/>ChallengeCalendar · MealSchedule · FoodRules"]
+    end
+    subgraph data["data"]
+        Repos["Repository implementations"]
+        Sources["Hive boxes · AnthropicRemoteDataSource<br/>ClaudePromptBuilder · ClaudeResponseParser"]
     end
 
-    subgraph Domain["Services · lib/services"]
-        Claude["ClaudeService"]
-        Prompt["prompts/ClaudePromptBuilder"]
-        Client["parsers/ClaudeApiClient"]
-        Parser["parsers/ClaudeResponseParser"]
-        Actions["CoachActionProcessor"]
-        Analysis["Daily / WeeklyAnalysisService"]
-        Timing["MealTimingService · JstService"]
-        Storage["StorageService"]
-    end
-
-    subgraph Data["Data · lib/models + lib/constants"]
-        Models["DietRecord · MealRecord · AppSettings · ChatMessage (Hive types)"]
-        Rules["diet_data · meal_offsets"]
-    end
-
-    Tabs --> Storage
-    Tabs --> Timing
-    Tabs --> Analysis
-    Record --> Claude
-    Record --> Storage
-    Coach --> Claude
-    Coach --> Actions
-    History --> Storage
-    Claude --> Prompt --> Rules
-    Claude --> Client --> API[("Anthropic Messages API")]
-    Claude --> Parser
-    Actions --> Storage
-    Analysis --> Claude
-    Analysis --> Storage
-    Storage --> Hive[("Hive boxes: records · settings · chat_json · day_summaries")]
-    Storage --> Models
-    Timing --> Rules
+    View --> VM
+    VM --> UC
+    VM --> Ports
+    UC --> Ports
+    UC --> Rules
+    Repos -. implements .-> Ports
+    Repos --> Sources
 ```
 
-- **Persistence**: Hive, local only. Day records are keyed by day index (1–28). The `settings` box holds the
-  start date and preferences. Chat logs are stored as JSON strings, one key per date. The type adapters are generated with
-  `hive_generator`, and the generated `*.g.dart` files are committed.
-- **State**: the app runs inside a Riverpod `ProviderScope`, and `TodayTab` is a `ConsumerStatefulWidget`.
-  Most screen state lives in `StatefulWidget`s that read from `StorageService`, and `MainScreen` reloads
-  records when the app resumes (`WidgetsBindingObserver`).
-- **Time**: every timestamp goes through `JstService`. It uses the `timezone` database (Asia/Tokyo) and
-  falls back to UTC+9 if that is unavailable.
+**Dependency rule.** Dependencies point towards `domain`. `domain` imports nothing from the other
+layers, `data` never imports `presentation`, and `core` never imports a feature. Wiring happens in
+one `<feature>_providers.dart` file per feature, and `lib/app/bootstrap.dart` opens the Hive boxes
+and passes them in as provider overrides. `scripts/check_quality.sh` fails if an import breaks the rule.
 
-A longer Korean design document with the data model, flows and colour system is in [`docs/ARCHITECTURE.ko.md`](docs/ARCHITECTURE.ko.md).
+```
+lib/
+├── main.dart                  # bootstrap(), then ProviderScope(overrides) → SwitchOnDietApp
+├── app/                       # app root, bootstrap, main tab shell
+├── core/
+│   ├── config/                # API key: --dart-define, then .env
+│   ├── di/                    # clockProvider, httpClientProvider, anthropicApiKeyProvider
+│   ├── theme/                 # colour tokens, ThemeData
+│   ├── time/                  # Clock / JstClock, Jst conversion and formatting
+│   └── utils/                 # TimeValidator (wake-up / bedtime rules)
+└── features/
+    ├── program/               # domain: ChallengeCalendar, MealSchedule, FoodRules, ProgramPhase · diet guide tab
+    ├── diet_record/           # day records: Today, Calendar, diet history, past-day backfill
+    ├── meal/                  # recording a meal and its AI verdict · meal reminders
+    ├── coach/                 # AI coach chat, chat history, the Claude integration
+    ├── analysis/              # scheduled daily and weekly reviews (use cases only)
+    └── settings/              # onboarding, my page, settings, reset
+```
+
+**A request, end to end: logging a meal.**
+
+1. `RecordMealScreen` (view) calls `RecordMealViewModel.save()` when the user taps *save*.
+2. The view model hands the form values to the `RecordMeal` use case.
+3. `RecordMeal` saves the meal through `DietRecordRepository` first, so the entry survives an AI failure,
+   then asks `AiCoachRepository.analyzeMeal` for a verdict.
+4. `ClaudeAiCoachRepository` builds the prompt with `ClaudePromptBuilder`, sends it through
+   `AnthropicRemoteDataSource`, and parses the reply with `ClaudeResponseParser`. HTTP errors become
+   typed `AiFailure`s at this boundary.
+5. The verdict is written back to the record. The Hive box emits a change, `dietRecordsProvider`
+   re-emits, and every view model that watches it (Today, Calendar, history) rebuilds. No screen has to be told to refresh.
+6. `save()` returns a sealed `RecordMealOutcome` (`analyzed`, `analysisFailed`, `notFound`), which the
+   view turns into a snackbar or a dialog.
+
+**Why Riverpod `Notifier` and Freezed.**
+
+- Providers double as the DI container. Every dependency, including the clock, the HTTP client and the
+  Hive boxes, can be replaced with `overrideWithValue` in a test, and nothing needs a `BuildContext`.
+- `AsyncNotifier` exposes loading and error as `AsyncValue`, so view models only describe the data
+  state. `autoDispose` and `family` give per-screen and per-item instances, for example one chat
+  thread per date.
+- Providers are written by hand. `riverpod_generator` would need a newer analyzer than
+  `hive_generator` supports, and the manual form keeps the dependency graph easy to read.
+- Freezed gives immutable entities and states with value equality (tests compare whole records),
+  `copyWith` for updates, and sealed unions (`CoachAction`, `RecordMealOutcome`) that `switch`
+  handles exhaustively.
+- Use cases exist only where there is logic to own: multi-step flows, time windows, cross-repository
+  work. Simple reads and writes go from the view model straight to the repository.
+  [`docs/ARCHITECTURE_DECISIONS.md`](docs/ARCHITECTURE_DECISIONS.md) records these choices.
+
+**Persistence and time.**
+
+- Hive, local only. Day records are keyed by day index (1–28), settings live under one key, and chat
+  threads are JSON strings keyed by date. The Hive models keep the original type ids and field
+  numbers. A test opens boxes written by the original adapters to make sure stored data still loads.
+- Everything that needs "now" receives a `Clock`. `JstClock` reads the `timezone` database
+  (Asia/Tokyo) and falls back to UTC+9. Tests use a fixed clock.
+
+A Korean design document is in [`docs/ARCHITECTURE.ko.md`](docs/ARCHITECTURE.ko.md).
 The diet rules the app encodes are summarised in [`docs/DIET_PROGRAM.ko.md`](docs/DIET_PROGRAM.ko.md).
 
 ### Tech stack
@@ -137,24 +179,26 @@ The diet rules the app encodes are summarised in [`docs/DIET_PROGRAM.ko.md`](doc
 | Area | Choice |
 |---|---|
 | Framework | Flutter 3.35 · Dart 3.8+ · Material 3 |
-| State | flutter_riverpod 2.x (`ProviderScope`), `StatefulWidget` |
+| Architecture | MVVM + Clean Architecture, feature-first folders |
+| State / DI | flutter_riverpod 2.x (`Notifier`, `AsyncNotifier`, provider overrides) |
+| Models | freezed (entities, view states, sealed unions) |
 | Local storage | hive · hive_flutter · hive_generator + build_runner |
 | AI | Anthropic Messages API over `http` (model `claude-haiku-4-5`) |
 | Time | timezone (fixed Asia/Tokyo) · intl |
-| Notifications | flutter_local_notifications. It is initialised at startup, and a meal-reminder scheduler is implemented in `NotificationService` but not yet connected to the UI. |
+| Notifications | flutter_local_notifications. It is initialised at startup, and a meal-reminder scheduler is implemented in `MealReminderService` but not yet connected to the UI. |
 | Config | `--dart-define` or flutter_dotenv (`.env`) |
 | i18n | flutter_localizations (`ko_KR`) |
-| Quality | flutter_lints with selected rules promoted to errors · unit tests |
+| Quality | flutter_lints plus strict analyzer modes · unit tests · layer-rule check |
 
 ### Notable engineering decisions
 
-- **Meal times are offsets from waking, not fixed clock times.** `meal_offsets.dart` defines each meal window
+- **Meal times are offsets from waking, not fixed clock times.** `MealSchedule` defines each meal window
   as minutes after waking. Timeline cards, recommended times and the missed-meal states are all calculated from that one table.
 - **Achievement is fair to late days.** A late wake-up only creates the meals that still fit in the day, and
   `DietRecord.score` ignores skipped meals. Your rate reflects the meals you could actually have eaten.
 - **The chat also logs records.** The system prompt asks Claude to add tags like `<ACTION>MEAL:아침:계란, 샐러드</ACTION>`
-  to its reply. `CoachAction.parseActions` extracts the tags and removes them from the visible text, and
-  `CoachActionProcessor` saves the wake, meal, skip or sleep events to Hive.
+  to its reply. `CoachActionParser` turns the tags into a sealed `CoachAction` list and removes them from the
+  visible text, and the `ApplyCoachActions` use case saves the wake, meal, skip or sleep events.
 - **Parsing tolerates loose output.** Meal verdicts are read from `STATUS:`/`FEEDBACK:` lines.
   If those are missing, the parser falls back to keywords and then to a safe default, so a malformed model reply
   never breaks the UI.
@@ -165,8 +209,9 @@ The diet rules the app encodes are summarised in [`docs/DIET_PROGRAM.ko.md`](doc
   or resumes. Each review runs once, and the result is saved on that day's record.
 - **Local-first.** Every record stays on the device. Only the AI requests leave it, and the API key is injected
   at build or run time instead of being stored in the repo.
-- **Strict lint settings.** Unused code, missing `const` and redundant null checks are analyzer *errors*. Files are kept under 500 lines,
-  and `scripts/check_quality.sh` reports on this (see [`docs/CODING_GUIDELINES.md`](docs/CODING_GUIDELINES.md)).
+- **Strict analysis.** `strict-casts`, `strict-inference` and `strict-raw-types` are on, and unused code, missing `const`
+  and redundant null checks are analyzer *errors*. Files stay under 500 lines, and `scripts/check_quality.sh`
+  also checks the layer dependency rule (see [`docs/CODING_GUIDELINES.md`](docs/CODING_GUIDELINES.md)).
 
 ### Getting started
 
@@ -189,7 +234,8 @@ flutter run --dart-define=ANTHROPIC_API_KEY=sk-ant-...
 - You can also put the key in `.env` (`ANTHROPIC_API_KEY=...`). A `--dart-define` value takes precedence.
 - The app calls the API directly from the device. For a public release, put a small proxy in front of it
   so the key is never shipped in the binary.
-- After changing a Hive model, regenerate the adapters with `dart run build_runner build --delete-conflicting-outputs`.
+- After changing a Hive model or a Freezed class, regenerate code with `dart run build_runner build --delete-conflicting-outputs`.
+  The generated `*.g.dart` and `*.freezed.dart` files are committed.
 - `make help` lists shortcuts (`make setup`, `make run ANTHROPIC_API_KEY=...`, `make check`).
 
 iOS is the main target. The web build also runs (Hive uses IndexedDB), and the screenshots above were taken from it.
@@ -198,34 +244,34 @@ iOS is the main target. The web build also runs (Hive uses IndexedDB), and the s
 
 ```
 lib/
-├── main.dart                 # bootstrap: env, timezone, Hive, notifications → Onboarding / Main
-├── constants/                # colours, meal offsets, week-by-week allowed/forbidden foods
-├── models/                   # Hive types (+ generated *.g.dart) and CoachAction parser
-├── services/
-│   ├── claude_service.dart   # one method per AI feature, token budgets
-│   ├── prompts/              # system-prompt construction
-│   ├── parsers/              # HTTP client, response parsing
-│   ├── coach_action_processor.dart
-│   ├── daily_analysis_service.dart / weekly_analysis_service.dart
-│   ├── meal_timing_service.dart / jst_service.dart
-│   ├── notification_service.dart
-│   └── storage_service.dart
-├── screens/                  # onboarding, main shell, tabs/, record_meal/, chat_history/, diet_history/, dialogs/, …
-└── utils/                    # time validation helpers
-test/                         # unit tests
-docs/                         # architecture, coding guidelines, diet program notes, screenshots
-scripts/                      # check_quality.sh, format_all.sh
+├── main.dart, app/            # bootstrap, app root, tab shell
+├── core/                      # config, DI, theme, Clock / JST, shared utils
+└── features/<feature>/
+    ├── domain/                # entities, repository interfaces, use cases
+    ├── data/                  # Hive models + mappers, data sources, repositories
+    ├── presentation/          # views and view models
+    └── <feature>_providers.dart
+test/                          # mirrors lib/features; fakes and Hive helpers in test/helpers
+docs/                          # architecture, decisions, coding guidelines, diet program, screenshots
+scripts/                       # check_quality.sh, format_all.sh
 ```
 
 ### Testing
 
 ```bash
 flutter analyze   # no issues
-flutter test      # unit tests
+flutter test      # 85 unit tests
+make check        # analyze + file size + layer dependency rule
 ```
 
-The unit tests cover the AI response parsers (`CoachAction.parseActions`, `ClaudeResponseParser`),
-the achievement score, and the wake, bedtime and sleep-duration rules in `TimeValidator`.
+| Layer | What is tested | How |
+|---|---|---|
+| domain | program rules, entity helpers, use cases (wake-up layout, meal recording, coach actions, scheduled reviews, greeting) | in-memory repositories and a `FixedClock` |
+| presentation | view models and derived state (Today, record meal, coach chat, history, calendar, settings) | a `ProviderContainer` with overridden repositories and clock |
+| data | Hive repositories, mappers, chat storage, the Anthropic client, prompt/response parsing | Hive in a temp directory, a box fixture written by the original adapters, `http` `MockClient` |
+
+There are no widget tests yet. Views only lay out state, and the logic behind them is tested through
+the view models.
 
 ### License
 
