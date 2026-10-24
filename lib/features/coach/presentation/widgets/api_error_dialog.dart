@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/features/coach/domain/ai_failure.dart';
 
 /// API 오류 타입
 enum ApiErrorType {
@@ -7,7 +8,15 @@ enum ApiErrorType {
   insufficientCredits, // 크레딧 부족
   serverError, // 서버 오류 (500+)
   networkError, // 네트워크 오류
-  unknown, // 기타 오류
+  unknown; // 기타 오류
+
+  static ApiErrorType of(AiFailure failure) => switch (failure) {
+    NetworkFailure() => networkError,
+    RateLimitFailure() => rateLimitExceeded,
+    CreditFailure() => insufficientCredits,
+    ServerFailure() => serverError,
+    MissingApiKeyFailure() || UnexpectedAiFailure() => unknown,
+  };
 }
 
 class ApiErrorDialog extends StatelessWidget {

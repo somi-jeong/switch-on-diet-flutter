@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/services/storage_service.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 
 class DailyRulesSection extends StatelessWidget {
   final DietRecord? record;
-  final int dayIdx;
+  final DietRecord? previousRecord;
 
   const DailyRulesSection({
     super.key,
     required this.record,
-    required this.dayIdx,
+    required this.previousRecord,
   });
 
   @override
@@ -22,19 +21,19 @@ class DailyRulesSection extends StatelessWidget {
     int sleepHours = 0;
     int sleepMinutes = 0;
 
-    if (dayIdx > 1) {
-      final prevRecord = StorageService.getRecord(dayIdx - 1);
-      if (prevRecord?.actualBedTime != null && record?.wakeTime != null) {
-        try {
-          final bedTime = DateTime.parse(prevRecord!.actualBedTime!);
-          final wakeTime = DateTime.parse(record!.wakeTime!);
-          final sleepDuration = wakeTime.difference(bedTime);
-          sleepHours = sleepDuration.inHours;
-          sleepMinutes = sleepDuration.inMinutes % 60;
-          // 6시간 이상이고, 자정~새벽4시 사이에 잤는지 체크
-          sleepCompleted =
-              sleepHours >= 6 && bedTime.hour >= 0 && bedTime.hour < 4;
-        } catch (_) {}
+    final bedTimeIso = previousRecord?.actualBedTime;
+    final wakeTimeIso = record?.wakeTime;
+    if (bedTimeIso != null && wakeTimeIso != null) {
+      try {
+        final bedTime = DateTime.parse(bedTimeIso);
+        final sleepDuration = DateTime.parse(wakeTimeIso).difference(bedTime);
+        sleepHours = sleepDuration.inHours;
+        sleepMinutes = sleepDuration.inMinutes % 60;
+        // 6시간 이상이고, 자정~새벽4시 사이에 잤는지 체크
+        sleepCompleted =
+            sleepHours >= 6 && bedTime.hour >= 0 && bedTime.hour < 4;
+      } on FormatException {
+        // Leave the sleep rule unchecked for malformed timestamps.
       }
     }
 

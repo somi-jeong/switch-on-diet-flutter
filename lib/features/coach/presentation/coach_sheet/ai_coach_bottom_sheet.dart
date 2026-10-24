@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:switchon_diet/core/di/core_providers.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/coach/coach_providers.dart';
+import 'package:switchon_diet/features/coach/domain/ai_failure.dart';
+import 'package:switchon_diet/features/coach/domain/entities/chat_message.dart';
 import 'package:switchon_diet/features/coach/presentation/coach_sheet/ai_coach_widgets.dart';
 import 'package:switchon_diet/features/coach/presentation/widgets/api_error_dialog.dart';
-import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
-import 'package:switchon_diet/features/program/domain/food_rules.dart';
-import 'package:switchon_diet/models/chat_message.dart';
-import 'package:switchon_diet/models/coach_action.dart';
-import 'package:switchon_diet/services/claude_service.dart';
-import 'package:switchon_diet/services/coach_action_processor.dart';
-import 'package:switchon_diet/services/parsers/claude_api_client.dart';
-import 'package:switchon_diet/services/storage_service.dart';
+import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/daily_mission.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_verdict.dart';
 
-class AiCoachBottomSheet extends StatefulWidget {
+class AiCoachBottomSheet extends ConsumerStatefulWidget {
   final String todayDate;
   final int todayIdx;
   final String startDate;
@@ -26,10 +25,10 @@ class AiCoachBottomSheet extends StatefulWidget {
   });
 
   @override
-  State<AiCoachBottomSheet> createState() => _AiCoachBottomSheetState();
+  ConsumerState<AiCoachBottomSheet> createState() => _AiCoachBottomSheetState();
 }
 
-class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
+class _AiCoachBottomSheetState extends ConsumerState<AiCoachBottomSheet>
     with SingleTickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -61,9 +60,11 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
 
   Future<void> _loadHistory() async {
     setState(() => _loading = true);
-    final msgs = await StorageService.getChatHistory(widget.todayDate);
+    final msgs = await ref
+        .read(chatRepositoryProvider)
+        .history(widget.todayDate);
     setState(() {
-      _messages = msgs;
+      _messages = [...msgs];
       _loading = false;
     });
     _scrollToBottom();
@@ -75,12 +76,13 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
 
     if (_messages.isEmpty) {
       // 현재 상태 분석
-      final todayRecord = StorageService.getRecord(widget.todayIdx);
+      final records = ref.read(dietRecordRepositoryProvider);
+      final todayRecord = records.get(widget.todayIdx);
       final yesterdayRecord = widget.todayIdx > 1
-          ? StorageService.getRecord(widget.todayIdx - 1)
+          ? records.get(widget.todayIdx - 1)
           : null;
 
-      final now = const JstClock().now();
+      final now = ref.read(clockProvider).now();
       final currentHour = now.hour;
 
       // 상태 분석
@@ -90,7 +92,7 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
       // 0. 과거 미입력 일자 체크 (오늘 이전)
       final List<int> pastMissingDays = [];
       for (int i = 1; i < widget.todayIdx; i++) {
-        final pastRecord = StorageService.getRecord(i);
+        final pastRecord = records.get(i);
         if (pastRecord == null || pastRecord.wakeTime == null) {
           pastMissingDays.add(i);
         }
@@ -129,7 +131,7 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
           if (meal.lateReason != null) {
             lateCount++;
           }
-          if (meal.aiStatus == 'FORBIDDEN') {
+          if (meal.verdict == MealVerdict.forbidden) {
             violationCount++;
           }
         }
@@ -145,11 +147,10 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
         }
 
         // 3. 데일리 미션 체크
-        final checklist = todayRecord.dailyChecklist ?? {};
-        final missedMissions = <String>[];
-        if (!(checklist['water'] ?? false)) missedMissions.add('물 2L');
-        if (!(checklist['supplements'] ?? false)) missedMissions.add('영양제');
-        if (!(checklist['workout'] ?? false)) missedMissions.add('운동');
+        final missedMissions = [
+          for (final mission in DailyMission.values)
+            if (!todayRecord.isMissionDone(mission)) mission.label,
+        ];
 
         if (missedMissions.isNotEmpty && currentHour >= 18) {
           issues.add('오늘 데일리 미션 중 ${missedMissions.join(', ')}를 아직 안 하셨네요');
@@ -200,16 +201,16 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
       }
 
       final message = ChatMessage(
-        role: 'assistant',
+        role: ChatRole.assistant,
         text: greeting,
-        timestamp: const JstClock().now().toIso8601String(),
+        timestamp: ref.read(clockProvider).now().toIso8601String(),
       );
 
       setState(() {
         _messages.add(message);
       });
 
-      await StorageService.saveChatMessage(widget.todayDate, message);
+      await ref.read(chatRepositoryProvider).append(widget.todayDate, message);
       _scrollToBottom();
     }
   }
@@ -231,9 +232,9 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
     if (text.isEmpty || _sending) return;
 
     final userMsg = ChatMessage(
-      role: 'user',
+      role: ChatRole.user,
       text: text,
-      timestamp: const JstClock().now().toIso8601String(),
+      timestamp: ref.read(clockProvider).now().toIso8601String(),
     );
 
     setState(() {
@@ -243,114 +244,39 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
     });
     _scrollToBottom();
 
-    await StorageService.saveChatMessage(widget.todayDate, userMsg);
+    final history = _messages.sublist(0, _messages.length - 1);
+    final chats = ref.read(chatRepositoryProvider);
+    await chats.append(widget.todayDate, userMsg);
 
     try {
-      final todayRecord = StorageService.getRecord(widget.todayIdx);
-
-      final mealDetails =
-          todayRecord?.meals
-              .map(
-                (m) => {
-                  'label': m.label,
-                  'checked': m.checked,
-                  'skipped': m.skipped,
-                  'aiStatus': m.aiStatus,
-                  'aiFeedback': m.aiFeedback,
-                },
-              )
-              .toList() ??
-          [];
-
-      final week = ChallengeCalendar.weekOf(widget.todayIdx);
-      final rules = FoodRules.forDay(widget.todayIdx);
-
-      // 토큰 절약을 위해 최근 6개 메시지만 포함 (유저 3개 + AI 3개 = 대화 3턴)
-      final recentMessages = _messages.length > 6
-          ? _messages.sublist(_messages.length - 6)
-          : _messages;
-      final chatHistory = recentMessages.map((m) => m.toMap()).toList();
-
-      // 어제 기록 요약 생성
-      String? yesterdaySummary;
-      if (widget.todayIdx > 1) {
-        final yesterdayRecord = StorageService.getRecord(widget.todayIdx - 1);
-        if (yesterdayRecord != null) {
-          final score = (yesterdayRecord.score * 100).round();
-          final scoreText = score >= 80
-              ? '완벽 ($score%)'
-              : score >= 60
-              ? '양호 ($score%)'
-              : '미흡 ($score%)';
-
-          final violations = yesterdayRecord.meals
-              .where((m) => m.aiStatus == 'FORBIDDEN')
-              .length;
-          final missed = yesterdayRecord.meals
-              .where((m) => !m.checked && !m.skipped)
-              .length;
-
-          yesterdaySummary = '$scoreText, 위반: $violations건, 미입력: $missed끼';
-        }
-      }
-
-      final claude = ClaudeService();
-      final response = await claude.chatWithCoach(
-        message: text,
-        day: widget.todayIdx,
-        week: week,
-        wakeTime: todayRecord?.wakeTime,
-        mealDetails: mealDetails,
-        allowedFoods: rules.allowed,
-        forbiddenFoods: rules.forbidden,
-        chatHistory: chatHistory,
-        yesterdaySummary: yesterdaySummary,
-      );
-
-      // Parse actions from AI response
-      final parsed = CoachAction.parseActions(response);
+      final reply = await ref
+          .read(sendCoachMessageProvider)
+          .call(day: widget.todayIdx, message: text, history: history);
 
       final aiMsg = ChatMessage(
-        role: 'assistant',
-        text: parsed.cleanedText,
-        timestamp: const JstClock().now().toIso8601String(),
+        role: ChatRole.assistant,
+        text: reply.text,
+        timestamp: ref.read(clockProvider).now().toIso8601String(),
       );
 
       setState(() => _messages.add(aiMsg));
-      await StorageService.saveChatMessage(widget.todayDate, aiMsg);
+      await chats.append(widget.todayDate, aiMsg);
       _scrollToBottom();
-
-      // Process actions
-      if (parsed.actions.isNotEmpty) {
-        await CoachActionProcessor.processActions(
-          parsed.actions,
-          widget.todayIdx,
-        );
-      }
-    } on ClaudeApiException catch (e) {
+    } on MissingApiKeyFailure {
+      _showUnexpectedError();
+    } on AiFailure catch (failure) {
       // Remove user message from UI (will retry on button press)
       setState(() => _messages.removeLast());
 
-      // Determine error type
-      ApiErrorType errorType;
-      if (e.isNetworkError) {
-        errorType = ApiErrorType.networkError;
-      } else if (e.isRateLimitError) {
-        errorType = ApiErrorType.rateLimitExceeded;
-      } else if (e.isCreditError) {
-        errorType = ApiErrorType.insufficientCredits;
-      } else if (e.isServerError) {
-        errorType = ApiErrorType.serverError;
-      } else {
-        errorType = ApiErrorType.unknown;
-      }
-
-      // Show error dialog with retry option
       if (mounted) {
         await showApiErrorDialog(
           context,
-          errorType: errorType,
-          errorMessage: e.statusCode != 0 ? 'HTTP ${e.statusCode}' : null,
+          errorType: ApiErrorType.of(failure),
+          errorMessage: switch (failure) {
+            ServerFailure(:final statusCode) => 'HTTP $statusCode',
+            UnexpectedAiFailure(:final statusCode?) => 'HTTP $statusCode',
+            _ => null,
+          },
           onRetry: () {
             // Re-add user message and retry
             setState(() => _messages.add(userMsg));
@@ -358,17 +284,18 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
           },
         );
       }
-    } catch (e) {
-      // Generic error - show simple message in chat
-      final errorMsg = ChatMessage(
-        role: 'assistant',
-        text: '죄송해요, 예기치 않은 오류가 발생했어요. 다시 시도해주세요.',
-        timestamp: const JstClock().now().toIso8601String(),
-      );
-      setState(() => _messages.add(errorMsg));
     } finally {
       setState(() => _sending = false);
     }
+  }
+
+  void _showUnexpectedError() {
+    final errorMsg = ChatMessage(
+      role: ChatRole.assistant,
+      text: '죄송해요, 예기치 않은 오류가 발생했어요. 다시 시도해주세요.',
+      timestamp: ref.read(clockProvider).now().toIso8601String(),
+    );
+    setState(() => _messages.add(errorMsg));
   }
 
   @override

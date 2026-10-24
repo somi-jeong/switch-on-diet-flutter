@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
 import 'package:switchon_diet/features/meal/presentation/record_meal_screen.dart';
 import 'package:switchon_diet/features/program/domain/meal_schedule.dart';
-import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/models/meal_record.dart';
-import 'package:switchon_diet/services/storage_service.dart';
+import 'package:switchon_diet/features/settings/settings_providers.dart';
 
 /// Screen for selecting which meal to record for a past date.
 /// Allows users to navigate to RecordMealScreen for any meal in a past date's record.
-class PastDateMealSelectionScreen extends StatefulWidget {
+class PastDateMealSelectionScreen extends ConsumerStatefulWidget {
   final int dayIdx;
   final String dateStr; // Formatted date string like "3월 15일"
 
@@ -21,35 +22,18 @@ class PastDateMealSelectionScreen extends StatefulWidget {
   });
 
   @override
-  State<PastDateMealSelectionScreen> createState() =>
+  ConsumerState<PastDateMealSelectionScreen> createState() =>
       _PastDateMealSelectionScreenState();
 }
 
 class _PastDateMealSelectionScreenState
-    extends State<PastDateMealSelectionScreen> {
-  DietRecord? _record;
-  bool _loading = true;
+    extends ConsumerState<PastDateMealSelectionScreen> {
+  DateTime get _date =>
+      ref.read(challengeCalendarProvider)!.dateOf(widget.dayIdx);
 
-  @override
-  void initState() {
-    super.initState();
-    _loadRecord();
-  }
-
-  Future<void> _loadRecord() async {
-    var record = StorageService.getRecord(widget.dayIdx);
-
-    // If no record exists, create an empty one (don't save yet, just for display)
-    record ??= DietRecord(
-      date: widget.dateStr,
-      meals: [], // Empty meals until wake time is entered
-    );
-
-    setState(() {
-      _record = record;
-      _loading = false;
-    });
-  }
+  DietRecord get _record =>
+      ref.read(dietRecordRepositoryProvider).get(widget.dayIdx) ??
+      DietRecord(date: Jst.isoDate(_date));
 
   Future<void> _showWakeTimeDialog() async {
     final selectedHour = await showModalBottomSheet<int>(
@@ -166,50 +150,42 @@ class _PastDateMealSelectionScreenState
     );
 
     if (selectedHour != null && mounted) {
-      // Create wake time with selected hour
-      final now = const JstClock().now();
-      final wakeTime = DateTime(now.year, now.month, now.day, selectedHour);
-      final wakeTimeIso = wakeTime.toIso8601String();
-
-      // Generate meals based on wake time (like today_tab does)
-      final meals = <MealRecord>[];
-      for (final slot in MealSchedule.slots) {
-        final start = Jst.hourMinute(slot.startAfter(wakeTime));
-        final end = Jst.hourMinute(slot.endAfter(wakeTime));
-        meals.add(MealRecord(label: slot.label, guideText: '$start ~ $end 예정'));
-      }
-
-      // Create or update record
-      final updatedRecord = DietRecord(
-        date: _record!.date,
-        wakeTime: wakeTimeIso,
-        meals: meals,
-      );
-
-      await StorageService.saveRecord(updatedRecord, widget.dayIdx);
-      await _loadRecord();
+      final date = _date;
+      final wakeTime = DateTime(date.year, date.month, date.day, selectedHour);
+      final meals = [
+        for (final slot in MealSchedule.slots)
+          MealRecord(
+            label: slot.label,
+            guideText:
+                '${Jst.hourMinute(slot.startAfter(wakeTime))} ~ '
+                '${Jst.hourMinute(slot.endAfter(wakeTime))} 예정',
+          ),
+      ];
+      await ref
+          .read(dietRecordRepositoryProvider)
+          .save(
+            widget.dayIdx,
+            _record.copyWith(
+              wakeTime: wakeTime.toIso8601String(),
+              meals: meals,
+            ),
+          );
     }
   }
 
   Future<void> _navigateToRecordMeal(String mealType) async {
-    if (_record == null) return;
-
-    // Find the meal in the record
-    final meal = _record!.meals.firstWhere(
-      (m) => m.label == mealType,
-      orElse: () => throw Exception('Meal $mealType not found'),
-    );
+    final meal = _record.mealOf(mealType);
+    if (meal == null) return;
 
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => RecordMealScreen(
           mealType: mealType,
-          todayIdx: widget.dayIdx,
+          day: widget.dayIdx,
           existingMeal: meal.checked ? meal : null,
           isPastDate: true, // Always true for PastDateMealSelectionScreen
           onBack: () {
             Navigator.of(context).pop();
-            _loadRecord(); // Reload the record after returning
           },
         ),
       ),
@@ -241,14 +217,15 @@ class _PastDateMealSelectionScreenState
           child: Divider(height: 1, color: kBorder),
         ),
       ),
-      body: _loading
+      body: ref.watch(dietRecordsProvider).isLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildMealSelectionView(),
     );
   }
 
   Widget _buildMealSelectionView() {
-    if (_record!.wakeTime == null || _record!.wakeTime!.isEmpty) {
+    final record = _record;
+    if (!record.hasWoken) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -309,7 +286,7 @@ class _PastDateMealSelectionScreenState
       );
     }
 
-    if (_record!.meals.isEmpty) {
+    if (record.meals.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -390,13 +367,13 @@ class _PastDateMealSelectionScreenState
             ),
           ),
           const SizedBox(height: 12),
-          ...(_record!.meals.map(_buildMealCard)),
+          ...record.meals.map(_buildMealCard),
         ],
       ),
     );
   }
 
-  Widget _buildMealCard(meal) {
+  Widget _buildMealCard(MealRecord meal) {
     final isChecked = meal.checked;
     final isSkipped = meal.skipped;
 

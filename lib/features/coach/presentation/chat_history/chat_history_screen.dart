@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/features/coach/coach_providers.dart';
 import 'package:switchon_diet/features/coach/presentation/chat_detail/chat_detail_screen.dart';
 import 'package:switchon_diet/features/coach/presentation/chat_history/history_item.dart';
 import 'package:switchon_diet/features/coach/presentation/chat_history/widgets/chat_history_header.dart';
 import 'package:switchon_diet/features/coach/presentation/chat_history/widgets/chat_history_list.dart';
 import 'package:switchon_diet/features/coach/presentation/chat_history/widgets/chat_history_search_bar.dart';
-import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/services/storage_service.dart';
+import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 
-class ChatHistoryScreen extends StatefulWidget {
+class ChatHistoryScreen extends ConsumerStatefulWidget {
   final String startDate;
   final int todayIdx;
 
@@ -19,10 +21,10 @@ class ChatHistoryScreen extends StatefulWidget {
   });
 
   @override
-  State<ChatHistoryScreen> createState() => _ChatHistoryScreenState();
+  ConsumerState<ChatHistoryScreen> createState() => _ChatHistoryScreenState();
 }
 
-class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
+class _ChatHistoryScreenState extends ConsumerState<ChatHistoryScreen> {
   List<HistoryItem> _history = [];
   bool _loading = true;
   String _searchQuery = '';
@@ -35,12 +37,14 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
 
   Future<void> _load() async {
     final items = <HistoryItem>[];
+    final records = ref.read(dietRecordRepositoryProvider);
+    final chats = ref.read(chatRepositoryProvider);
 
     // Load daily AI feedbacks from DietRecords
     for (int d = widget.todayIdx; d >= 1; d--) {
-      final record = StorageService.getRecord(d);
+      final record = records.get(d);
       final date = _dayToDate(d);
-      final msgs = await StorageService.getChatHistory(date);
+      final msgs = await chats.history(date);
 
       // Add weekly summaries at end of each week
       if (d % 7 == 0 && d > 0) {

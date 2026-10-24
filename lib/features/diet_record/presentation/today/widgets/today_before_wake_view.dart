@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/core/utils/time_validator.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/dialogs/wake_dialogs.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/meal_card/meal_card.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/missed_bedtime_banner.dart';
-import 'package:switchon_diet/models/meal_record.dart';
 
 /// The view shown before the user records their wake time.
 /// Displays a wake-up card with late time warnings and locked meal placeholders.
@@ -31,10 +31,10 @@ class TodayBeforeWakeView extends StatelessWidget {
   Widget build(BuildContext context) {
     // 기상 전에도 빈 식사 목록 생성 (guideText 포함)
     final placeholderMeals = [
-      MealRecord(label: '아침', guideText: '기상 후 30~90분'),
-      MealRecord(label: '점심', guideText: '기상 후 3.5~4.5시간'),
-      MealRecord(label: '간식', guideText: '기상 후 6.5~7.5시간'),
-      MealRecord(label: '저녁', guideText: '기상 후 9.5~10.5시간'),
+      const MealRecord(label: '아침', guideText: '기상 후 30~90분'),
+      const MealRecord(label: '점심', guideText: '기상 후 3.5~4.5시간'),
+      const MealRecord(label: '간식', guideText: '기상 후 6.5~7.5시간'),
+      const MealRecord(label: '저녁', guideText: '기상 후 9.5~10.5시간'),
     ];
 
     // 기상 시간이 늦었는지 체크
@@ -222,7 +222,7 @@ class TodayBeforeWakeView extends StatelessWidget {
                 return MealCard(meal: meal, isLocked: true);
               }),
               // 잠긴 취침 카드
-              MealCard(
+              const MealCard(
                 meal: MealRecord(label: '취침', guideText: '저녁 식사 후 4시간 뒤'),
                 isLocked: true,
               ),

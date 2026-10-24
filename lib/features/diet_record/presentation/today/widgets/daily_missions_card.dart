@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/daily_checklist_item.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/sleep_checklist_item.dart';
-import 'package:switchon_diet/models/diet_record.dart';
 
 /// A card that displays the daily missions checklist.
 /// Includes water intake, supplements, workout, and sleep tracking.

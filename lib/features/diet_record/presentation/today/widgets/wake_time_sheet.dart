@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/clock.dart';
-import 'package:switchon_diet/services/storage_service.dart';
 
 class WakeTimeSheet extends StatefulWidget {
-  final DateTime? targetDate;
-  final int? currentDayIdx;
+  /// The sheet starts at this time, and the picked time is on its date.
+  final DateTime now;
 
-  const WakeTimeSheet({super.key, this.targetDate, this.currentDayIdx});
+  /// Last night's bedtime (ISO-8601), used to show how long the user slept.
+  final String? previousBedTime;
+
+  const WakeTimeSheet({super.key, required this.now, this.previousBedTime});
 
   @override
   State<WakeTimeSheet> createState() => _WakeTimeSheetState();
@@ -22,9 +23,8 @@ class _WakeTimeSheetState extends State<WakeTimeSheet> {
   @override
   void initState() {
     super.initState();
-    final now = const JstClock().now();
-    _hour = now.hour;
-    _minute = now.minute;
+    _hour = widget.now.hour;
+    _minute = widget.now.minute;
     _timeController = TextEditingController(
       text:
           '${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}',
@@ -38,7 +38,7 @@ class _WakeTimeSheetState extends State<WakeTimeSheet> {
   }
 
   DateTime _toJst() {
-    final baseDate = widget.targetDate ?? const JstClock().now();
+    final baseDate = widget.now;
     return DateTime(
       baseDate.year,
       baseDate.month,
@@ -61,19 +61,11 @@ class _WakeTimeSheetState extends State<WakeTimeSheet> {
   }
 
   ({int sleepHours, int sleepMinutes})? _getSleepDuration() {
-    if (widget.currentDayIdx == null) return null;
-
-    final allRecords = StorageService.getAllRecords();
-    if (widget.currentDayIdx! - 1 < 0) return null;
-
-    final yesterdayRecord = allRecords[widget.currentDayIdx! - 1];
-
-    if (yesterdayRecord?.bedTime == null || yesterdayRecord!.bedTime!.isEmpty) {
-      return null;
-    }
+    final bedTime = widget.previousBedTime;
+    if (bedTime == null || bedTime.isEmpty) return null;
 
     try {
-      final bedDateTime = DateTime.parse(yesterdayRecord.bedTime!);
+      final bedDateTime = DateTime.parse(bedTime);
       final wakeDateTime = _toJst();
 
       int sleepMinutes = wakeDateTime.difference(bedDateTime).inMinutes;

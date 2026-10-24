@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_verdict.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets/calendar_grid.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets/calendar_header.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets/day_details.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets/future_day_message.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets/week_status_card.dart';
-import 'package:switchon_diet/models/diet_record.dart';
 
 class CalendarTab extends StatefulWidget {
   final String startDate;
@@ -49,7 +50,9 @@ class _CalendarTabState extends State<CalendarTab> {
     }
 
     // violation: FORBIDDEN meal exists
-    final hasViolation = record.meals.any((m) => m.aiStatus == 'FORBIDDEN');
+    final hasViolation = record.meals.any(
+      (m) => m.verdict == MealVerdict.forbidden,
+    );
     if (hasViolation) return 'warning';
 
     // incomplete: any unrecorded meal
@@ -66,7 +69,7 @@ class _CalendarTabState extends State<CalendarTab> {
       String status;
       if (m.skipped) {
         status = 'skipped';
-      } else if (m.aiStatus == 'FORBIDDEN') {
+      } else if (m.verdict == MealVerdict.forbidden) {
         status = 'violation';
       } else if (m.checked) {
         status = 'recorded';

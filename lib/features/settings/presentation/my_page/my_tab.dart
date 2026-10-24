@@ -1,28 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/features/coach/presentation/chat_history/chat_history_screen.dart';
 import 'package:switchon_diet/features/diet_record/presentation/history/diet_history_screen.dart';
 import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
+import 'package:switchon_diet/features/settings/domain/entities/app_settings.dart';
 import 'package:switchon_diet/features/settings/presentation/my_page/settings_dialogs.dart';
-import 'package:switchon_diet/services/storage_service.dart';
+import 'package:switchon_diet/features/settings/settings_providers.dart';
 
-class MyTab extends StatefulWidget {
+class MyTab extends ConsumerWidget {
   final String startDate;
-  final VoidCallback? onEnterWeekly;
 
-  const MyTab({super.key, required this.startDate, this.onEnterWeekly});
+  const MyTab({super.key, required this.startDate});
 
   @override
-  State<MyTab> createState() => _MyTabState();
-}
-
-class _MyTabState extends State<MyTab> with RouteAware {
-  @override
-  Widget build(BuildContext context) {
-    final stats = _calculateStats();
-    final userName = StorageService.getSettings()?.userName ?? '다이어터';
-    final week = ChallengeCalendar.weekOf(stats.todayIdx);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final todayIdx = ref.watch(currentDayProvider) ?? 1;
+    final userName =
+        ref.watch(settingsProvider)?.userName ?? AppSettings.defaultUserName;
+    final week = ChallengeCalendar.weekOf(todayIdx);
 
     return Container(
       color: kBgColor,
@@ -96,7 +92,7 @@ class _MyTabState extends State<MyTab> with RouteAware {
                             children: [
                               const TextSpan(text: '스위치온 '),
                               TextSpan(
-                                text: '$week주차 • ${stats.todayIdx}일째',
+                                text: '$week주차 • $todayIdx일째',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                   color: kPrimaryMint,
@@ -183,14 +179,14 @@ class _MyTabState extends State<MyTab> with RouteAware {
                     context,
                     '식단 및 수면 기록 보기',
                     null,
-                    () => _navigateToDietHistory(context, stats.todayIdx),
+                    () => _navigateToDietHistory(context, todayIdx),
                     icon: Icons.calendar_today,
                   ),
                   _buildSettingItem(
                     context,
                     'AI 코치 히스토리',
                     null,
-                    () => _navigateToChatHistory(context, stats.todayIdx),
+                    () => _navigateToChatHistory(context, todayIdx),
                     icon: Icons.history,
                   ),
                   _buildSettingItem(
@@ -210,10 +206,10 @@ class _MyTabState extends State<MyTab> with RouteAware {
                   _buildSettingItem(
                     context,
                     '다이어트 시작일 변경',
-                    widget.startDate.replaceAll('-', '.'),
+                    startDate.replaceAll('-', '.'),
                     () => SettingsDialogs.showEditStartDateDialog(
                       context,
-                      widget.startDate,
+                      startDate,
                     ),
                     icon: Icons.calendar_today,
                     showBorder: false,
@@ -327,54 +323,12 @@ class _MyTabState extends State<MyTab> with RouteAware {
     );
   }
 
-  _ChallengeStats _calculateStats() {
-    final endDate = DateTime.parse(
-      widget.startDate,
-    ).add(const Duration(days: 27));
-    final endDateStr =
-        '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
-
-    final now = const JstClock().now();
-    final todayIdx = ChallengeCalendar.fromIsoDate(widget.startDate).dayAt(now);
-
-    final allRecords = StorageService.getAllRecords();
-    int totalWarnings = 0;
-    double totalScore = 0;
-    int recordedDays = 0;
-    int completedDays = 0;
-
-    for (var i = 1; i <= todayIdx; i++) {
-      final record = allRecords[i];
-      if (record != null) {
-        totalWarnings += record.warningCount;
-        totalScore += record.score;
-        recordedDays++;
-
-        if (record.wakeTime != null && record.wakeTime!.isNotEmpty) {
-          completedDays++;
-        }
-      }
-    }
-
-    final avgScore = recordedDays > 0
-        ? (totalScore / recordedDays * 100).round()
-        : 0;
-
-    return _ChallengeStats(
-      endDateStr: endDateStr,
-      todayIdx: todayIdx,
-      totalWarnings: totalWarnings,
-      avgScore: avgScore,
-      completedDays: completedDays,
-    );
-  }
-
   void _navigateToChatHistory(BuildContext context, int todayIdx) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) =>
-            ChatHistoryScreen(startDate: widget.startDate, todayIdx: todayIdx),
+            ChatHistoryScreen(startDate: startDate, todayIdx: todayIdx),
       ),
     );
   }
@@ -384,21 +338,8 @@ class _MyTabState extends State<MyTab> with RouteAware {
       context,
       MaterialPageRoute(
         builder: (_) =>
-            DietHistoryScreen(startDate: widget.startDate, todayIdx: todayIdx),
+            DietHistoryScreen(startDate: startDate, todayIdx: todayIdx),
       ),
     );
   }
-}
-
-class _ChallengeStats {
-  final String endDateStr;
-  final int todayIdx, totalWarnings, avgScore, completedDays;
-
-  _ChallengeStats({
-    required this.endDateStr,
-    required this.todayIdx,
-    required this.totalWarnings,
-    required this.avgScore,
-    required this.completedDays,
-  });
 }

@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:switchon_diet/core/di/core_providers.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/coach/domain/ai_failure.dart';
+import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_verdict.dart';
+import 'package:switchon_diet/features/meal/domain/usecases/record_meal.dart';
+import 'package:switchon_diet/features/meal/meal_providers.dart';
 import 'package:switchon_diet/features/meal/presentation/dialogs/error_dialog.dart';
 import 'package:switchon_diet/features/meal/presentation/dialogs/loading_dialog.dart';
 import 'package:switchon_diet/features/meal/presentation/widgets/ai_coach_message_card.dart';
@@ -9,16 +16,12 @@ import 'package:switchon_diet/features/meal/presentation/widgets/food_text_input
 import 'package:switchon_diet/features/meal/presentation/widgets/meal_time_input.dart';
 import 'package:switchon_diet/features/meal/presentation/widgets/record_meal_actions.dart';
 import 'package:switchon_diet/features/meal/presentation/widgets/record_meal_header.dart';
-import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
-import 'package:switchon_diet/features/program/domain/food_rules.dart';
-import 'package:switchon_diet/models/meal_record.dart';
-import 'package:switchon_diet/services/claude_service.dart';
-import 'package:switchon_diet/services/storage_service.dart';
+import 'package:switchon_diet/features/settings/settings_providers.dart';
 
-class RecordMealScreen extends StatefulWidget {
+class RecordMealScreen extends ConsumerStatefulWidget {
   final String mealType; // '아침', '점심', '간식', '저녁'
   final VoidCallback onBack;
-  final int? todayIdx; // 오늘 인덱스 (optional for existing records)
+  final int day;
   final MealRecord? existingMeal; // 수정할 기존 식사 (optional)
   final bool isPastDate; // 과거 날짜 여부 (시간만 입력)
 
@@ -26,16 +29,16 @@ class RecordMealScreen extends StatefulWidget {
     super.key,
     required this.mealType,
     required this.onBack,
-    this.todayIdx,
+    required this.day,
     this.existingMeal,
     this.isPastDate = false,
   });
 
   @override
-  State<RecordMealScreen> createState() => _RecordMealScreenState();
+  ConsumerState<RecordMealScreen> createState() => _RecordMealScreenState();
 }
 
-class _RecordMealScreenState extends State<RecordMealScreen> {
+class _RecordMealScreenState extends ConsumerState<RecordMealScreen> {
   final _textController = TextEditingController();
   late TextEditingController _timeController;
   late int _hour;
@@ -55,12 +58,12 @@ class _RecordMealScreenState extends State<RecordMealScreen> {
         _hour = eatenTime.hour;
         _minute = widget.isPastDate ? 0 : eatenTime.minute;
       } else {
-        final now = const JstClock().now();
+        final now = ref.read(clockProvider).now();
         _hour = now.hour;
         _minute = widget.isPastDate ? 0 : now.minute;
       }
     } else {
-      final now = const JstClock().now();
+      final now = ref.read(clockProvider).now();
       _hour = now.hour;
       _minute = widget.isPastDate ? 0 : now.minute;
     }
@@ -95,155 +98,75 @@ class _RecordMealScreenState extends State<RecordMealScreen> {
 
   Future<void> _handleSave() async {
     if (_textController.text.isEmpty) return;
-    if (widget.todayIdx == null) {
-      debugPrint('[RecordMeal] Error: todayIdx is null');
-      return;
-    }
 
-    final foodText = _textController.text.trim();
-    final mealTime = DateTime(
-      const JstClock().now().year,
-      const JstClock().now().month,
-      const JstClock().now().day,
-      _hour,
-      _minute,
-    );
+    final date = ref.read(challengeCalendarProvider)!.dateOf(widget.day);
+    final eatenAt = DateTime(date.year, date.month, date.day, _hour, _minute);
 
-    debugPrint(
-      '[RecordMeal] Saving ${widget.mealType} at ${mealTime.toIso8601String()}',
-    );
-    debugPrint('[RecordMeal] Food text: $foodText');
-
-    // Show loading dialog
-    if (!mounted) return;
     showLoadingDialog(context, 'AI가 식사를 분석 중이에요...');
-
     try {
-      // Get current record
-      final todayIdx = widget.todayIdx!;
-      final record = StorageService.getRecord(todayIdx);
-      if (record == null) {
-        debugPrint('[RecordMeal] No record found for day $todayIdx');
-        if (!mounted) return;
-        Navigator.of(context).pop(); // Close loading
-        widget.onBack();
-        return;
-      }
-
-      // Find meal by label
-      final mealIndex = record.meals.indexWhere(
-        (m) => m.label == widget.mealType,
-      );
-      if (mealIndex == -1) {
-        debugPrint('[RecordMeal] Meal ${widget.mealType} not found');
-        if (!mounted) return;
-        Navigator.of(context).pop(); // Close loading
-        widget.onBack();
-        return;
-      }
-
-      final meal = record.meals[mealIndex];
-
-      // Update meal record
-      meal.foodText = foodText;
-      meal.eatenAt = mealTime.toIso8601String();
-      meal.recordedAt = const JstClock().now().toIso8601String();
-      meal.checked = true;
-      meal.skipped = false;
-
-      // Save first (before AI call)
-      await StorageService.saveRecord(record, todayIdx);
-
-      // Calculate week and get allowed/forbidden foods
-      final settings = StorageService.getSettings();
-      if (settings == null) {
-        debugPrint('[RecordMeal] No settings found');
-        if (!mounted) return;
-        Navigator.of(context).pop(); // Close loading
-        widget.onBack();
-        return;
-      }
-
-      final week = ChallengeCalendar.weekOf(todayIdx);
-      final rules = FoodRules.forDay(todayIdx);
-
-      // Call AI analysis
-      final claude = ClaudeService();
-      final analysisResult = await claude.analyzeFoodText(
-        foodText: foodText,
-        week: week,
-        day: todayIdx,
-        allowedFoods: rules.allowed,
-        forbiddenFoods: rules.forbidden,
-      );
-
-      // Save AI feedback
-      meal.aiStatus = analysisResult['status'] as String?;
-      meal.aiFeedback = analysisResult['feedback'] as String?;
-
-      await StorageService.saveRecord(record, todayIdx);
-
+      final analysis = await ref
+          .read(recordMealProvider)
+          .call(
+            day: widget.day,
+            label: widget.mealType,
+            foodText: _textController.text.trim(),
+            eatenAt: eatenAt,
+            lateReason: widget.existingMeal?.lateReason,
+          );
       if (!mounted) return;
-      Navigator.of(context).pop(); // Close loading
-
-      // Show AI feedback
-      final status = meal.aiStatus ?? 'ALLOWED';
-      final feedback = meal.aiFeedback ?? '분석 완료!';
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Text(
-                status == 'ALLOWED'
-                    ? '✅'
-                    : status == 'WARNING'
-                    ? '⚠️'
-                    : '❌',
-                style: const TextStyle(fontSize: 20),
-              ),
-              const SizedBox(width: 8),
-              Expanded(child: Text(feedback)),
-            ],
-          ),
-          backgroundColor: status == 'ALLOWED'
-              ? Colors.green
-              : status == 'WARNING'
-              ? Colors.orange
-              : Colors.red,
-        ),
-      );
-
-      debugPrint('[RecordMeal] Saved with AI status: $status');
+      Navigator.of(context).pop();
+      _showVerdict(analysis.verdict, analysis.feedback);
       widget.onBack();
-    } catch (e) {
-      debugPrint('[RecordMeal] Error: $e');
+    } on MealSlotNotFound {
       if (!mounted) return;
-      Navigator.of(context).pop(); // Close loading
-
-      // Show error dialog
-      String errorTitle = 'AI 분석 실패';
-      String errorMessage = '식사 기록은 저장되었지만, AI 분석에 실패했어요.';
-
-      if (e.toString().contains('RESOURCE_EXHAUSTED') ||
-          e.toString().contains('Quota exceeded') ||
-          e.toString().contains('429')) {
-        errorTitle = 'AI 분석 한도 초과';
-        errorMessage =
-            '오늘 AI 분석 가능 횟수를 모두 사용했어요.\n\n식사 기록은 정상적으로 저장되었으니 걱정하지 마세요!\n\n내일 다시 AI 분석을 이용하실 수 있습니다.';
-      } else if (e.toString().contains('404') ||
-          e.toString().contains('not found')) {
-        errorTitle = 'AI 서비스 오류';
-        errorMessage = 'AI 서비스에 일시적인 문제가 발생했어요.\n\n식사 기록은 정상적으로 저장되었습니다.';
-      }
-
-      await showErrorDialog(context, errorTitle, errorMessage);
+      Navigator.of(context).pop();
+      widget.onBack();
+    } on AiFailure catch (failure) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      final (title, message) = _analysisErrorText(failure);
+      await showErrorDialog(context, title, message);
       widget.onBack();
     }
   }
 
+  void _showVerdict(MealVerdict verdict, String feedback) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Text(switch (verdict) {
+              MealVerdict.allowed => '✅',
+              MealVerdict.warning => '⚠️',
+              MealVerdict.forbidden => '❌',
+            }, style: const TextStyle(fontSize: 20)),
+            const SizedBox(width: 8),
+            Expanded(child: Text(feedback)),
+          ],
+        ),
+        backgroundColor: switch (verdict) {
+          MealVerdict.allowed => Colors.green,
+          MealVerdict.warning => Colors.orange,
+          MealVerdict.forbidden => Colors.red,
+        },
+      ),
+    );
+  }
+
+  (String, String) _analysisErrorText(AiFailure failure) => switch (failure) {
+    RateLimitFailure() => (
+      'AI 분석 한도 초과',
+      '오늘 AI 분석 가능 횟수를 모두 사용했어요.\n\n식사 기록은 정상적으로 저장되었으니 걱정하지 마세요!\n\n내일 다시 AI 분석을 이용하실 수 있습니다.',
+    ),
+    UnexpectedAiFailure(statusCode: 404) => (
+      'AI 서비스 오류',
+      'AI 서비스에 일시적인 문제가 발생했어요.\n\n식사 기록은 정상적으로 저장되었습니다.',
+    ),
+    _ => ('AI 분석 실패', '식사 기록은 저장되었지만, AI 분석에 실패했어요.'),
+  };
+
   Future<void> _handleDelete() async {
-    if (widget.todayIdx == null || widget.existingMeal == null) {
+    if (widget.existingMeal == null) {
       // 새로운 기록인 경우 그냥 닫기
       widget.onBack();
       return;
@@ -291,32 +214,13 @@ class _RecordMealScreenState extends State<RecordMealScreen> {
 
     if (confirmed != true) return;
 
-    // Delete meal record
-    final todayIdx = widget.todayIdx!;
-    final record = StorageService.getRecord(todayIdx);
+    final records = ref.read(dietRecordRepositoryProvider);
+    final record = records.get(widget.day);
     if (record == null) return;
-
-    final mealIndex = record.meals.indexWhere(
-      (m) => m.label == widget.mealType,
+    await records.save(
+      widget.day,
+      record.updateMeal(widget.mealType, (meal) => meal.cleared()),
     );
-    if (mealIndex == -1) return;
-
-    // Reset meal to unchecked state
-    final meal = record.meals[mealIndex];
-    meal.checked = false;
-    meal.skipped = false;
-    meal.foodText = null;
-    meal.eatenAt = null;
-    meal.recordedAt = null;
-    meal.photoPath = null;
-    meal.photoTimestamp = null;
-    meal.aiStatus = null;
-    meal.aiFeedback = null;
-    meal.skipReason = null;
-    meal.lateReason = null;
-
-    await StorageService.saveRecord(record, todayIdx);
-    debugPrint('[RecordMeal] Deleted meal record for ${widget.mealType}');
 
     if (!mounted) return;
     widget.onBack();

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/clock.dart';
-import 'package:switchon_diet/features/analysis/presentation/weekly_feedback_screen.dart';
+import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/analysis/analysis_providers.dart';
+import 'package:switchon_diet/features/coach/domain/ai_failure.dart';
+import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/calendar_tab.dart';
 import 'package:switchon_diet/features/diet_record/presentation/past_day/past_date_meal_selection_screen.dart';
 import 'package:switchon_diet/features/diet_record/presentation/past_day/past_date_warning_dialog.dart';
@@ -9,31 +13,29 @@ import 'package:switchon_diet/features/diet_record/presentation/today/today_tab.
 import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
 import 'package:switchon_diet/features/program/presentation/diet_tab.dart';
 import 'package:switchon_diet/features/settings/presentation/my_page/my_tab.dart';
-import 'package:switchon_diet/models/app_settings.dart';
-import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/services/daily_analysis_service.dart';
-import 'package:switchon_diet/services/storage_service.dart';
-import 'package:switchon_diet/services/weekly_analysis_service.dart';
+import 'package:switchon_diet/features/settings/settings_providers.dart';
 
-class MainScreen extends StatefulWidget {
+/// The tab shell shown once the challenge has started.
+///
+/// Besides hosting the tabs it owns two app-level duties: picking up a new
+/// program day when the app resumes, and triggering the scheduled daily and
+/// weekly reviews (there is no backend to run them).
+class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
 
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  ConsumerState<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
-  int _currentTab = 0; // Default to today tab
-  late AppSettings _settings;
-  Map<int, DietRecord> _records = {};
-  int _todayIdx = 1;
-  int _week = 1;
+class _MainScreenState extends ConsumerState<MainScreen>
+    with WidgetsBindingObserver {
+  int _currentTab = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _runScheduledReviews());
   }
 
   @override
@@ -44,123 +46,58 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-
-    // Reload data when app resumes from background
     if (state == AppLifecycleState.resumed) {
-      debugPrint('App resumed - reloading data from Hive');
-      _loadData();
-    } else if (state == AppLifecycleState.paused) {
-      debugPrint('App paused - data should be saved in Hive');
+      ref.invalidate(currentDayProvider);
+      _runScheduledReviews();
     }
   }
 
-  Future<void> _checkWeeklyAnalysis() async {
-    if (_settings.startDate.isNotEmpty) {
-      await WeeklyAnalysisService.checkAndGenerateWeeklySummary(
-        startDate: _settings.startDate,
-      );
+  Future<void> _runScheduledReviews() async {
+    final startDate = ref.read(settingsProvider)?.startDate;
+    if (startDate == null) return;
+    final reviews = [
+      ref.read(generateWeeklySummaryProvider).runIfDue,
+      ref.read(generateDailyFeedbackProvider).runIfDue,
+    ];
+    for (final runIfDue in reviews) {
+      try {
+        await runIfDue(startDate: startDate);
+      } on AiFailure catch (failure) {
+        debugPrint('Scheduled review failed: $failure');
+      }
     }
   }
 
-  Future<void> _checkDailyAnalysis() async {
-    if (_settings.startDate.isNotEmpty) {
-      await DailyAnalysisService.checkAndGenerateDailyFeedback(
-        startDate: _settings.startDate,
-      );
+  Future<void> _openPastDay(ChallengeCalendar calendar, int day) async {
+    final date = calendar.dateOf(day);
+    final dateLabel = '${date.month}월 ${date.day}일';
+    final confirmed = await showPastDateMealWarning(context, dateLabel);
+    if (confirmed != true || !mounted) return;
+
+    final records = ref.read(dietRecordRepositoryProvider);
+    if (records.get(day) == null) {
+      await records.save(day, DietRecord(date: Jst.isoDate(date)));
     }
-  }
-
-  void _loadData() {
-    debugPrint('[_loadData] Starting data load...');
-    final settings = StorageService.getSettings();
-    if (settings == null) {
-      debugPrint('[_loadData] No settings found');
-      return;
-    }
-
-    _settings = settings;
-
-    // Check for weekly and daily analysis after settings are loaded
-    _checkWeeklyAnalysis();
-    _checkDailyAnalysis();
-
-    // Calculate today's day index
-    final now = const JstClock().now();
-    _todayIdx = ChallengeCalendar.fromIsoDate(_settings.startDate).dayAt(now);
-    _week = ChallengeCalendar.weekOf(_todayIdx);
-
-    debugPrint('[_loadData] Today is day $_todayIdx, week $_week');
-
-    // Load records
-    _records = StorageService.getAllRecords();
-    debugPrint('[_loadData] Loaded ${_records.length} records');
-    debugPrint(
-      '[_loadData] Today\'s record exists: ${_records[_todayIdx] != null}',
-    );
-    if (_records[_todayIdx] != null) {
-      debugPrint(
-        '[_loadData] Today\'s wakeTime: ${_records[_todayIdx]!.wakeTime}',
-      );
-    }
-
-    setState(() {});
-  }
-
-  void _handleEnterWeekly() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            WeeklyFeedbackScreen(startDate: _settings.startDate, week: _week),
-      ),
-    );
-  }
-
-  Future<void> _handleDateTap(int dayIdx) async {
-    // Show past date meal input dialog
-    await _showPastDateMealDialog(dayIdx);
-  }
-
-  Future<void> _showPastDateMealDialog(int dayIdx) async {
-    final startDateTime = DateTime.parse(_settings.startDate);
-    final dateObj = startDateTime.add(Duration(days: dayIdx - 1));
-    final dateStr = '${dateObj.month}월 ${dateObj.day}일';
-
-    final result = await showPastDateMealWarning(context, dateStr);
-
-    if (result != true) return;
     if (!mounted) return;
 
-    // Create record if it doesn't exist
-    var record = _records[dayIdx];
-    if (record == null) {
-      record = DietRecord(
-        date:
-            '${dateObj.year}-${dateObj.month.toString().padLeft(2, '0')}-${dateObj.day.toString().padLeft(2, '0')}',
-        meals: [],
-      );
-      await StorageService.saveRecord(record, dayIdx);
-      _loadData();
-    }
-
-    if (!mounted) return;
-
-    // Navigate to past date meal selection screen
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) =>
-            PastDateMealSelectionScreen(dayIdx: dayIdx, dateStr: dateStr),
+            PastDateMealSelectionScreen(dayIdx: day, dateStr: dateLabel),
       ),
     );
-
-    // Reload data after returning from the screen
-    _loadData();
   }
 
   @override
   Widget build(BuildContext context) {
+    final calendar = ref.watch(challengeCalendarProvider);
+    final today = ref.watch(currentDayProvider);
+    if (calendar == null || today == null) return const SizedBox.shrink();
+    final week = ChallengeCalendar.weekOf(today);
+    final startDate = ref.watch(settingsProvider)!.startDate;
+    final records = ref.watch(dietRecordsProvider).valueOrNull ?? const {};
+
     return Scaffold(
       backgroundColor: kBgColor,
       body: Stack(
@@ -170,27 +107,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             child: IndexedStack(
               index: _currentTab,
               children: [
-                TodayTab(
-                  key: ValueKey('today_$_todayIdx'),
-                  onDataChanged: _loadData,
-                ),
+                TodayTab(key: ValueKey('today_$today')),
                 CalendarTab(
-                  key: ValueKey('calendar_${_todayIdx}_${_records.length}'),
-                  startDate: _settings.startDate,
-                  todayIdx: _todayIdx,
-                  records: _records,
-                  onDateTap: _handleDateTap,
+                  key: ValueKey('calendar_$today'),
+                  startDate: startDate,
+                  todayIdx: today,
+                  records: records,
+                  onDateTap: (day) => _openPastDay(calendar, day),
                 ),
                 DietTab(
-                  key: ValueKey('diet_$_todayIdx'),
-                  week: _week,
-                  todayIdx: _todayIdx,
+                  key: ValueKey('diet_$today'),
+                  week: week,
+                  todayIdx: today,
                 ),
-                MyTab(
-                  key: ValueKey('my_$_todayIdx'),
-                  startDate: _settings.startDate,
-                  onEnterWeekly: _handleEnterWeekly,
-                ),
+                MyTab(key: ValueKey('my_$today'), startDate: startDate),
               ],
             ),
           ),

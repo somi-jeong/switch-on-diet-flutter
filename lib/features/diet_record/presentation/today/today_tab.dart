@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:switchon_diet/core/di/core_providers.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/features/coach/presentation/coach_sheet/ai_coach_bottom_sheet.dart';
+import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/today_after_wake_view.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/today_before_wake_view.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/today_header.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/today_widgets.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/wake_time_sheet.dart';
 import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
-import 'package:switchon_diet/features/program/domain/meal_schedule.dart';
-import 'package:switchon_diet/models/app_settings.dart';
-import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/models/meal_record.dart';
-import 'package:switchon_diet/services/storage_service.dart';
+import 'package:switchon_diet/features/settings/domain/entities/app_settings.dart';
+import 'package:switchon_diet/features/settings/settings_providers.dart';
 
 class TodayTab extends ConsumerStatefulWidget {
   final VoidCallback? onDataChanged;
@@ -39,7 +39,7 @@ class _TodayTabState extends ConsumerState<TodayTab> {
   }
 
   Future<void> _load() async {
-    final settings = StorageService.getSettings();
+    final settings = ref.read(settingsProvider);
     if (settings == null || settings.startDate.isEmpty) {
       setState(() => _loading = false);
       return;
@@ -48,10 +48,11 @@ class _TodayTabState extends ConsumerState<TodayTab> {
     final now = const JstClock().now();
     _todayIdx = ChallengeCalendar.fromIsoDate(settings.startDate).dayAt(now);
     _week = ChallengeCalendar.weekOf(_todayIdx);
-    var record = StorageService.getRecord(_todayIdx);
+    final records = ref.read(dietRecordRepositoryProvider);
+    var record = records.get(_todayIdx);
     if (record == null) {
-      record = DietRecord(date: Jst.isoDate(now), meals: []);
-      await StorageService.saveRecord(record, _todayIdx);
+      record = DietRecord(date: Jst.isoDate(now));
+      await records.save(_todayIdx, record);
     }
     setState(() {
       _record = record;
@@ -61,32 +62,11 @@ class _TodayTabState extends ConsumerState<TodayTab> {
 
   Future<void> _saveWakeTime(DateTime wakeTime) async {
     if (_record == null) return;
-    final meals = [
-      for (final slot in MealSchedule.slotsForWakeHour(wakeTime.hour))
-        MealRecord(label: slot.label),
-    ];
-
-    final updated = DietRecord(
-      date: _record!.date,
-      wakeTime: wakeTime.toIso8601String(),
-      meals: meals,
-      weight: _record!.weight,
-      bodyFat: _record!.bodyFat,
-      diary: _record!.diary,
-      aiFeedback: _record!.aiFeedback,
-      weeklySummary: _record!.weeklySummary,
-      confession: _record!.confession,
-      confessionFeedback: _record!.confessionFeedback,
-      bedTime: _record!.bedTime,
-      warningCount: _record!.warningCount,
-      actualBedTime: _record!.actualBedTime,
-      bedTimeFeedback: _record!.bedTimeFeedback,
-    );
-    await StorageService.saveRecord(updated, _todayIdx);
-    setState(() {
-      _record = updated;
-    });
-    widget.onDataChanged?.call(); // Notify parent
+    final updated = await ref
+        .read(recordWakeTimeProvider)
+        .call(day: _todayIdx, wakeTime: wakeTime);
+    setState(() => _record = updated);
+    widget.onDataChanged?.call();
   }
 
   Future<void> _showWakeTimeEditSheet() async {
@@ -99,8 +79,11 @@ class _TodayTabState extends ConsumerState<TodayTab> {
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         child: WakeTimeSheet(
-          targetDate: const JstClock().now(),
-          currentDayIdx: _todayIdx,
+          now: ref.read(clockProvider).now(),
+          previousBedTime: ref
+              .read(dietRecordRepositoryProvider)
+              .get(_todayIdx - 1)
+              ?.bedTime,
         ),
       ),
     );
@@ -125,7 +108,9 @@ class _TodayTabState extends ConsumerState<TodayTab> {
     final yesterdayIdx = _todayIdx - 1;
     if (yesterdayIdx < 1) return false;
 
-    final yesterdayRecord = StorageService.getRecord(yesterdayIdx);
+    final yesterdayRecord = ref
+        .read(dietRecordRepositoryProvider)
+        .get(yesterdayIdx);
     return yesterdayRecord != null &&
         yesterdayRecord.wakeTime != null &&
         (yesterdayRecord.bedTime == null || yesterdayRecord.bedTime!.isEmpty);

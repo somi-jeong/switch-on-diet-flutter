@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/jst.dart';
-import 'package:switchon_diet/models/diet_record.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 
 /// A specialized checklist item for sleep tracking.
 /// Calculates and displays sleep duration and checks if it meets the 6-hour goal.

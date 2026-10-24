@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/models/chat_message.dart';
+import 'package:switchon_diet/features/coach/domain/entities/chat_message.dart';
 
 class ChatDetailWidgets {
   static const kDarkGreen = Color(0xFF1F2A24);
@@ -183,7 +183,7 @@ class ChatDetailWidgets {
   }
 
   static Widget buildBubbleRow(ChatMessage msg, BuildContext context) {
-    final isUser = msg.role == 'user';
+    final isUser = msg.isUser;
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
       child: Row(

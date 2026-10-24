@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/models/meal_record.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
 
 class LockedMeal extends StatelessWidget {
   final MealRecord meal;

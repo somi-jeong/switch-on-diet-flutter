@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/features/settings/presentation/onboarding_screen.dart';
-import 'package:switchon_diet/services/storage_service.dart';
+import 'package:switchon_diet/features/settings/settings_providers.dart';
 
 class SettingsDialogs {
   static Future<void> showEditStartDateDialog(
@@ -118,35 +118,31 @@ class SettingsDialogs {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          await StorageService.clearAll();
-                          if (context.mounted) {
-                            await Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                builder: (_) => const OnboardingScreen(),
-                              ),
-                              (route) => false,
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF43F5E),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          elevation: 1,
-                          shadowColor: const Color(
-                            0xFFF43F5E,
-                          ).withValues(alpha: 0.3),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                      child: Consumer(
+                        builder: (context, ref, child) => ElevatedButton(
+                          onPressed: () async {
+                            final navigator = Navigator.of(context);
+                            await ref.read(settingsProvider.notifier).reset();
+                            navigator.popUntil((route) => route.isFirst);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFF43F5E),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            elevation: 1,
+                            shadowColor: const Color(
+                              0xFFF43F5E,
+                            ).withValues(alpha: 0.3),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          '초기화하기',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
+                          child: const Text(
+                            '초기화하기',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ),
@@ -162,16 +158,17 @@ class SettingsDialogs {
   }
 }
 
-class _EditNameBottomSheet extends StatefulWidget {
+class _EditNameBottomSheet extends ConsumerStatefulWidget {
   final String currentName;
 
   const _EditNameBottomSheet({required this.currentName});
 
   @override
-  State<_EditNameBottomSheet> createState() => _EditNameBottomSheetState();
+  ConsumerState<_EditNameBottomSheet> createState() =>
+      _EditNameBottomSheetState();
 }
 
-class _EditNameBottomSheetState extends State<_EditNameBottomSheet> {
+class _EditNameBottomSheetState extends ConsumerState<_EditNameBottomSheet> {
   late TextEditingController _controller;
 
   @override
@@ -190,12 +187,7 @@ class _EditNameBottomSheetState extends State<_EditNameBottomSheet> {
     final newName = _controller.text.trim();
     if (newName.isEmpty) return;
 
-    final settings = StorageService.getSettings();
-    if (settings != null) {
-      settings.userName = newName;
-      await StorageService.saveSettings(settings);
-    }
-
+    await ref.read(settingsProvider.notifier).rename(newName);
     if (mounted) {
       Navigator.of(context).pop();
     }
@@ -317,16 +309,18 @@ class _EditNameBottomSheetState extends State<_EditNameBottomSheet> {
   }
 }
 
-class _DatePickerBottomSheet extends StatefulWidget {
+class _DatePickerBottomSheet extends ConsumerStatefulWidget {
   final String currentStartDate;
 
   const _DatePickerBottomSheet({required this.currentStartDate});
 
   @override
-  State<_DatePickerBottomSheet> createState() => _DatePickerBottomSheetState();
+  ConsumerState<_DatePickerBottomSheet> createState() =>
+      _DatePickerBottomSheetState();
 }
 
-class _DatePickerBottomSheetState extends State<_DatePickerBottomSheet> {
+class _DatePickerBottomSheetState
+    extends ConsumerState<_DatePickerBottomSheet> {
   late DateTime selectedDate;
 
   @override
@@ -337,21 +331,7 @@ class _DatePickerBottomSheetState extends State<_DatePickerBottomSheet> {
 
   Future<void> _handleConfirm() async {
     Navigator.of(context).pop();
-
-    final newStartDate =
-        '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}';
-    final settings = StorageService.getSettings();
-    if (settings != null) {
-      settings.startDate = newStartDate;
-      await StorageService.saveSettings(settings);
-    }
-
-    if (mounted) {
-      await Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-        (route) => false,
-      );
-    }
+    await ref.read(settingsProvider.notifier).changeStartDate(selectedDate);
   }
 
   @override

@@ -35,9 +35,6 @@ dependencies:
   # Internationalization
   intl: ^0.20.2
 
-  # Path provider for Hive
-  path_provider: ^2.1.4
-
   # Environment variables
   flutter_dotenv: ^5.2.1
 

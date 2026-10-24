@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/meal_card/completed_meal.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/meal_card/locked_meal.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/meal_card/missed_meal.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/meal_card/next_meal.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/meal_card/pending_meal.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/meal_card/skipped_meal.dart';
-import 'package:switchon_diet/models/meal_record.dart';
 
 /// 식사 타임라인 카드
 /// 상태: 완료(checked), 현재(next), 대기(pending), 잠김(locked), 미입력(missed), 스킵(skipped)

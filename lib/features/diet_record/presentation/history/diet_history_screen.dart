@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 import 'package:switchon_diet/features/diet_record/presentation/history/widgets/diet_history_day_card.dart';
 import 'package:switchon_diet/features/diet_record/presentation/past_day/past_date_meal_selection_screen.dart';
 import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
-import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/services/storage_service.dart';
 
-class DietHistoryScreen extends StatefulWidget {
+class DietHistoryScreen extends ConsumerStatefulWidget {
   final String startDate;
   final int todayIdx;
   final int? initialSelectedDay;
@@ -20,10 +21,10 @@ class DietHistoryScreen extends StatefulWidget {
   });
 
   @override
-  State<DietHistoryScreen> createState() => _DietHistoryScreenState();
+  ConsumerState<DietHistoryScreen> createState() => _DietHistoryScreenState();
 }
 
-class _DietHistoryScreenState extends State<DietHistoryScreen> {
+class _DietHistoryScreenState extends ConsumerState<DietHistoryScreen> {
   List<_DayHistory> _history = [];
   bool _loading = true;
   final _scrollController = ScrollController();
@@ -41,17 +42,12 @@ class _DietHistoryScreenState extends State<DietHistoryScreen> {
   }
 
   Future<void> _loadHistory() async {
+    final records = ref.read(dietRecordRepositoryProvider).getAll();
     final history = <_DayHistory>[];
 
     // Show ALL days from 1 to todayIdx, even if no record exists
     for (int i = widget.todayIdx; i >= 1; i--) {
-      var record = StorageService.getRecord(i);
-
-      // If no record exists, create an empty one for display
-      record ??= DietRecord(
-        date: _getDateForDay(i),
-        meals: [], // Empty meals list
-      );
+      final record = records[i] ?? DietRecord(date: _getDateForDay(i));
 
       final date = _getDateForDay(i);
       history.add(_DayHistory(dayIdx: i, date: date, record: record));

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/ai_feedback_card.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/bedtime_card.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/daily_missions_card.dart';
@@ -13,13 +17,10 @@ import 'package:switchon_diet/features/meal/presentation/dialogs/skip_reason_dia
 import 'package:switchon_diet/features/meal/presentation/dialogs/skip_warning_dialog.dart';
 import 'package:switchon_diet/features/meal/presentation/record_meal_screen.dart';
 import 'package:switchon_diet/features/program/domain/meal_schedule.dart';
-import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/models/meal_record.dart';
-import 'package:switchon_diet/services/storage_service.dart';
 
 /// The main view shown after the user has recorded their wake time.
 /// Displays today's progress, daily missions, meals timeline, and bedtime tracking.
-class TodayAfterWakeView extends StatelessWidget {
+class TodayAfterWakeView extends ConsumerWidget {
   final DietRecord record;
   final int todayIdx;
   final String fastingText;
@@ -35,45 +36,16 @@ class TodayAfterWakeView extends StatelessWidget {
     required this.onWakeTimeEdit,
   });
 
-  Future<void> _toggleDailyMission(BuildContext context, String mission) async {
-    debugPrint('[DailyMission] Toggling $mission');
-    final checklist = Map<String, bool>.from(record.dailyChecklist ?? {});
-    final oldValue = checklist[mission] ?? false;
-    final newValue = !oldValue;
-    checklist[mission] = newValue;
-    debugPrint('[DailyMission] $mission: $oldValue -> $newValue');
-
-    final updated = DietRecord(
-      date: record.date,
-      wakeTime: record.wakeTime,
-      meals: record.meals,
-      weight: record.weight,
-      bodyFat: record.bodyFat,
-      diary: record.diary,
-      aiFeedback: record.aiFeedback,
-      weeklySummary: record.weeklySummary,
-      confession: record.confession,
-      confessionFeedback: record.confessionFeedback,
-      bedTime: record.bedTime,
-      warningCount: record.warningCount,
-      actualBedTime: record.actualBedTime,
-      bedTimeFeedback: record.bedTimeFeedback,
-      dailyChecklist: checklist,
-    );
-
-    debugPrint('[DailyMission] Saving record...');
-    await StorageService.saveRecord(updated, todayIdx);
-    debugPrint('[DailyMission] Refreshing...');
-    onRefresh();
-    debugPrint('[DailyMission] Complete');
-  }
+  Future<void> _toggleDailyMission(WidgetRef ref, String mission) => ref
+      .read(dietRecordRepositoryProvider)
+      .save(todayIdx, record.toggleMission(mission));
 
   Future<void> _handleRecordMeal(BuildContext context, MealRecord meal) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => RecordMealScreen(
           mealType: meal.label,
-          todayIdx: todayIdx,
+          day: todayIdx,
           existingMeal: meal.checked ? meal : null,
           onBack: () {
             Navigator.of(context).pop();
@@ -86,55 +58,28 @@ class TodayAfterWakeView extends StatelessWidget {
 
   Future<void> _handleSkipMeal(
     BuildContext context,
-    int index,
+    WidgetRef ref,
     MealRecord meal,
   ) async {
-    debugPrint('[Skip] Starting skip for ${meal.label}');
     final result = await showSkipWarningDialog(context);
-    debugPrint('[Skip] Dialog result: $result');
 
     if (result == true) {
-      debugPrint('[Skip] User confirmed skip');
-      if (!context.mounted) {
-        debugPrint('[Skip] Context not mounted');
-        return;
-      }
+      if (!context.mounted) return;
 
       // 스킵 이유 입력
       final reason = await showSkipReasonDialog(context, meal.label);
       if (!context.mounted) return;
 
-      // 스킵 처리
-      final updatedMeals = List<MealRecord>.from(record.meals);
-      updatedMeals[index] = MealRecord(
-        label: meal.label,
-        skipped: true,
-        guideText: meal.guideText,
-        skipReason: reason,
+      final updated = record.updateMeal(
+        meal.label,
+        (meal) => MealRecord(
+          label: meal.label,
+          skipped: true,
+          guideText: meal.guideText,
+          skipReason: reason,
+        ),
       );
-      final updated = DietRecord(
-        date: record.date,
-        wakeTime: record.wakeTime,
-        meals: updatedMeals,
-        weight: record.weight,
-        bodyFat: record.bodyFat,
-        diary: record.diary,
-        aiFeedback: record.aiFeedback,
-        weeklySummary: record.weeklySummary,
-        confession: record.confession,
-        confessionFeedback: record.confessionFeedback,
-        bedTime: record.bedTime,
-        warningCount: record.warningCount,
-        actualBedTime: record.actualBedTime,
-        bedTimeFeedback: record.bedTimeFeedback,
-      );
-      debugPrint('[Skip] Saving record with reason: $reason');
-      await StorageService.saveRecord(updated, todayIdx);
-      debugPrint('[Skip] Record saved, refreshing...');
-      onRefresh();
-      debugPrint('[Skip] Complete');
-    } else {
-      debugPrint('[Skip] User cancelled or result is null/false');
+      await ref.read(dietRecordRepositoryProvider).save(todayIdx, updated);
     }
   }
 
@@ -189,7 +134,7 @@ class TodayAfterWakeView extends StatelessWidget {
         MaterialPageRoute(
           builder: (context) => RecordMealScreen(
             mealType: meal.label,
-            todayIdx: todayIdx,
+            day: todayIdx,
             existingMeal: updatedMeal,
             onBack: () {
               Navigator.of(context).pop();
@@ -202,7 +147,7 @@ class TodayAfterWakeView extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final wake = Jst.parse(record.wakeTime!);
     final wakeHour = wake.hour;
 
@@ -332,8 +277,7 @@ class TodayAfterWakeView extends StatelessWidget {
               // Daily Missions Checklist
               DailyMissionsCard(
                 record: record,
-                onToggleMission: (mission) =>
-                    _toggleDailyMission(context, mission),
+                onToggleMission: (mission) => _toggleDailyMission(ref, mission),
               ),
               const SizedBox(height: 16),
               // Fasting Timer Card
@@ -369,7 +313,7 @@ class TodayAfterWakeView extends StatelessWidget {
                       ? () => _handleRecordMeal(context, meal)
                       : null,
                   onSkip: isNext
-                      ? () => _handleSkipMeal(context, index, meal)
+                      ? () => _handleSkipMeal(context, ref, meal)
                       : null,
                   onEdit: meal.checked
                       ? () => _handleRecordMeal(context, meal)

@@ -4,6 +4,7 @@ import 'package:switchon_diet/features/diet_record/data/models/diet_record_model
 import 'package:switchon_diet/features/diet_record/data/repositories/hive_diet_record_repository.dart';
 import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 import 'package:switchon_diet/features/diet_record/domain/repositories/diet_record_repository.dart';
+import 'package:switchon_diet/features/diet_record/domain/usecases/record_wake_time.dart';
 
 /// Opened during bootstrap and injected with `overrideWithValue`.
 final dietRecordBoxProvider = Provider<Box<DietRecordModel>>(
@@ -20,4 +21,8 @@ final dietRecordRepositoryProvider = Provider<DietRecordRepository>(
 /// (a dialog, the coach, a background analysis) shows up everywhere.
 final dietRecordsProvider = StreamProvider<Map<int, DietRecord>>(
   (ref) => ref.watch(dietRecordRepositoryProvider).watchAll(),
+);
+
+final recordWakeTimeProvider = Provider<RecordWakeTime>(
+  (ref) => RecordWakeTime(ref.watch(dietRecordRepositoryProvider)),
 );

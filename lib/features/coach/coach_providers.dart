@@ -7,6 +7,9 @@ import 'package:switchon_diet/features/coach/data/repositories/claude_ai_coach_r
 import 'package:switchon_diet/features/coach/data/repositories/hive_chat_repository.dart';
 import 'package:switchon_diet/features/coach/domain/repositories/ai_coach_repository.dart';
 import 'package:switchon_diet/features/coach/domain/repositories/chat_repository.dart';
+import 'package:switchon_diet/features/coach/domain/usecases/apply_coach_actions.dart';
+import 'package:switchon_diet/features/coach/domain/usecases/send_coach_message.dart';
+import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
 
 /// Opened during bootstrap and injected with `overrideWithValue`.
 final chatBoxProvider = Provider<Box<String>>(
@@ -33,5 +36,21 @@ final aiCoachRepositoryProvider = Provider<AiCoachRepository>(
       client: ref.watch(httpClientProvider),
       apiKey: ref.watch(anthropicApiKeyProvider),
     ),
+  ),
+);
+
+final applyCoachActionsProvider = Provider<ApplyCoachActions>(
+  (ref) => ApplyCoachActions(
+    records: ref.watch(dietRecordRepositoryProvider),
+    recordWakeTime: ref.watch(recordWakeTimeProvider),
+    clock: ref.watch(clockProvider),
+  ),
+);
+
+final sendCoachMessageProvider = Provider<SendCoachMessage>(
+  (ref) => SendCoachMessage(
+    records: ref.watch(dietRecordRepositoryProvider),
+    coach: ref.watch(aiCoachRepositoryProvider),
+    applyActions: ref.watch(applyCoachActionsProvider),
   ),
 );

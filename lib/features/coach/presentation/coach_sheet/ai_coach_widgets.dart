@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/models/chat_message.dart';
+import 'package:switchon_diet/features/coach/domain/entities/chat_message.dart';
 
 /// Reusable widgets for AI coach bottom sheet
 class AiCoachWidgets {
@@ -66,7 +66,7 @@ class AiCoachWidgets {
   }
 
   static Widget buildBubbleRow(ChatMessage msg, BuildContext context) {
-    final isUser = msg.role == 'user';
+    final isUser = msg.isUser;
     final screenWidth = MediaQuery.of(context).size.width;
 
     // AI messages: max 70% width, User messages: max 75% width

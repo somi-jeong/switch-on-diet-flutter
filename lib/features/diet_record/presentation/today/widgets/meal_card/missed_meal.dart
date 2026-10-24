@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/models/meal_record.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
 
 /// Displays a meal that has passed its time window but hasn't been recorded
 /// Shows "미입력" badge and allows user to input the time they actually ate

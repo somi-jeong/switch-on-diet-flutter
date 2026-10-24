@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/core/time/clock.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:switchon_diet/core/di/core_providers.dart';
+import 'package:switchon_diet/features/coach/coach_providers.dart';
+import 'package:switchon_diet/features/coach/domain/ai_failure.dart';
+import 'package:switchon_diet/features/coach/domain/entities/chat_message.dart';
 import 'package:switchon_diet/features/coach/presentation/chat_detail/widgets/chat_detail_widgets.dart';
-import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
-import 'package:switchon_diet/features/program/domain/food_rules.dart';
-import 'package:switchon_diet/models/chat_message.dart';
-import 'package:switchon_diet/services/claude_service.dart';
-import 'package:switchon_diet/services/storage_service.dart';
 
-class ChatDetailScreen extends StatefulWidget {
+class ChatDetailScreen extends ConsumerStatefulWidget {
   final int day;
   final String date; // "2026-03-13"
   final List<ChatMessage> messages;
@@ -22,10 +21,10 @@ class ChatDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<ChatDetailScreen> createState() => _ChatDetailScreenState();
+  ConsumerState<ChatDetailScreen> createState() => _ChatDetailScreenState();
 }
 
-class _ChatDetailScreenState extends State<ChatDetailScreen> {
+class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   late List<ChatMessage> _msgs;
   String? _daySummary;
   final TextEditingController _textController = TextEditingController();
@@ -50,7 +49,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   }
 
   Future<void> _loadSummary() async {
-    final s = await StorageService.getDaySummary(widget.date);
+    final s = await ref.read(chatRepositoryProvider).daySummary(widget.date);
     if (mounted) setState(() => _daySummary = s);
   }
 
@@ -82,9 +81,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
     // Create user message
     final userMsg = ChatMessage(
-      role: 'user',
+      role: ChatRole.user,
       text: text,
-      timestamp: const JstClock().now().toIso8601String(),
+      timestamp: ref.read(clockProvider).now().toIso8601String(),
     );
 
     setState(() {
@@ -93,68 +92,31 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       _textController.clear();
     });
 
-    // Save user message
-    await StorageService.saveChatMessage(widget.date, userMsg);
+    final history = _msgs.sublist(0, _msgs.length - 1);
+    final chats = ref.read(chatRepositoryProvider);
+    await chats.append(widget.date, userMsg);
 
     try {
-      // Get today's record for context
-      final todayRecord = StorageService.getRecord(widget.day);
-
-      // Prepare meal details
-      final mealDetails =
-          todayRecord?.meals
-              .map(
-                (m) => {
-                  'label': m.label,
-                  'checked': m.checked,
-                  'skipped': m.skipped,
-                  'aiStatus': m.aiStatus,
-                  'aiFeedback': m.aiFeedback,
-                },
-              )
-              .toList() ??
-          [];
-
-      // Calculate week and get diet plan
-      final week = ChallengeCalendar.weekOf(widget.day);
-      final rules = FoodRules.forDay(widget.day);
-
-      // Prepare chat history
-      final chatHistory = _msgs
-          .sublist(0, _msgs.length)
-          .map((m) => m.toMap())
-          .toList();
-
-      // Get AI response
-      final claude = ClaudeService();
-      final response = await claude.chatWithCoach(
-        message: text,
-        day: widget.day,
-        week: week,
-        wakeTime: todayRecord?.wakeTime,
-        mealDetails: mealDetails,
-        allowedFoods: rules.allowed,
-        forbiddenFoods: rules.forbidden,
-        chatHistory: chatHistory,
-      );
+      final reply = await ref
+          .read(sendCoachMessageProvider)
+          .call(day: widget.day, message: text, history: history);
 
       // Create AI message
       final aiMsg = ChatMessage(
-        role: 'assistant',
-        text: response,
-        timestamp: const JstClock().now().toIso8601String(),
+        role: ChatRole.assistant,
+        text: reply.text,
+        timestamp: ref.read(clockProvider).now().toIso8601String(),
       );
 
       setState(() => _msgs.add(aiMsg));
 
       // Save AI message
-      await StorageService.saveChatMessage(widget.date, aiMsg);
-    } catch (e) {
-      // Show error message
+      await chats.append(widget.date, aiMsg);
+    } on AiFailure {
       final errorMsg = ChatMessage(
-        role: 'assistant',
+        role: ChatRole.assistant,
         text: '죄송해요, 일시적인 오류가 발생했어요. 다시 시도해주세요.',
-        timestamp: const JstClock().now().toIso8601String(),
+        timestamp: ref.read(clockProvider).now().toIso8601String(),
       );
       setState(() => _msgs.add(errorMsg));
     } finally {
@@ -196,8 +158,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 final divider = _dividerLabel(idx);
                 final isLastAiMessage =
                     idx < _msgs.length &&
-                    _msgs[idx].role == 'assistant' &&
-                    (idx == _msgs.length - 1 || _msgs[idx + 1].role == 'user');
+                    !_msgs[idx].isUser &&
+                    (idx == _msgs.length - 1 || _msgs[idx + 1].isUser);
 
                 return Column(
                   children: [

@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/app/main_screen.dart';
-import 'package:switchon_diet/core/time/clock.dart';
-import 'package:switchon_diet/models/app_settings.dart';
-import 'package:switchon_diet/services/storage_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:switchon_diet/core/di/core_providers.dart';
+import 'package:switchon_diet/features/settings/settings_providers.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   late DateTime _selectedDate;
   late DateTime _currentMonth;
   final TextEditingController _nameController = TextEditingController();
@@ -19,17 +18,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    final now = const JstClock().now();
-    // Remove time component for date comparison
+    final now = ref.read(clockProvider).now();
     _selectedDate = DateTime(now.year, now.month, now.day);
     _currentMonth = DateTime(now.year, now.month);
-
-    // Force rebuild to show selected date
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
   }
 
   @override
@@ -38,23 +29,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  Future<void> _handleStart() async {
-    final dateStr =
-        '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
-
-    final userName = _nameController.text.trim().isEmpty
-        ? '다이어터'
-        : _nameController.text.trim();
-
-    final settings = AppSettings(startDate: dateStr, userName: userName);
-    await StorageService.saveSettings(settings);
-
-    if (mounted) {
-      await Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const MainScreen()));
-    }
-  }
+  Future<void> _handleStart() => ref
+      .read(settingsProvider.notifier)
+      .start(startDate: _selectedDate, userName: _nameController.text);
 
   void _handlePrevMonth() {
     setState(() {

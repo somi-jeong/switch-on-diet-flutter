@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/dialogs/bedtime_dialogs.dart';
-import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/services/storage_service.dart';
 
 /// Banner that appears when the user missed recording bedtime yesterday.
 /// Allows recording missed bedtime to maintain accurate sleep tracking.
-class MissedBedtimeBanner extends StatelessWidget {
+class MissedBedtimeBanner extends ConsumerWidget {
   final int yesterdayIdx;
   final VoidCallback onRecorded;
 
@@ -18,7 +18,7 @@ class MissedBedtimeBanner extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 16),
@@ -68,7 +68,8 @@ class MissedBedtimeBanner extends StatelessWidget {
               final selectedTime = await showMissedBedtimeModal(context);
               if (selectedTime != null && context.mounted) {
                 // 어제 날짜의 bedTime 저장
-                final yesterdayRecord = StorageService.getRecord(yesterdayIdx);
+                final records = ref.read(dietRecordRepositoryProvider);
+                final yesterdayRecord = records.get(yesterdayIdx);
                 if (yesterdayRecord != null) {
                   final now = const JstClock().now();
                   final yesterday = now.subtract(const Duration(days: 1));
@@ -79,23 +80,12 @@ class MissedBedtimeBanner extends StatelessWidget {
                     selectedTime.hour,
                     selectedTime.minute,
                   );
-                  final updated = DietRecord(
-                    date: yesterdayRecord.date,
-                    wakeTime: yesterdayRecord.wakeTime,
-                    meals: yesterdayRecord.meals,
-                    weight: yesterdayRecord.weight,
-                    bodyFat: yesterdayRecord.bodyFat,
-                    diary: yesterdayRecord.diary,
-                    aiFeedback: yesterdayRecord.aiFeedback,
-                    weeklySummary: yesterdayRecord.weeklySummary,
-                    confession: yesterdayRecord.confession,
-                    confessionFeedback: yesterdayRecord.confessionFeedback,
-                    bedTime: bedtimeDateTime.toIso8601String(),
-                    warningCount: yesterdayRecord.warningCount,
-                    actualBedTime: yesterdayRecord.actualBedTime,
-                    bedTimeFeedback: yesterdayRecord.bedTimeFeedback,
+                  await records.save(
+                    yesterdayIdx,
+                    yesterdayRecord.copyWith(
+                      bedTime: bedtimeDateTime.toIso8601String(),
+                    ),
                   );
-                  await StorageService.saveRecord(updated, yesterdayIdx);
                   onRecorded();
                 }
               }

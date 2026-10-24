@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_verdict.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets/calendar_day_cell.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets/calendar_legend.dart';
-import 'package:switchon_diet/models/diet_record.dart';
 
 class CalendarGrid extends StatelessWidget {
   final int todayIdx;
@@ -34,7 +35,9 @@ class CalendarGrid extends StatelessWidget {
     }
 
     // violation: FORBIDDEN meal exists
-    final hasViolation = record.meals.any((m) => m.aiStatus == 'FORBIDDEN');
+    final hasViolation = record.meals.any(
+      (m) => m.verdict == MealVerdict.forbidden,
+    );
     if (hasViolation) return 'warning';
 
     // incomplete: any unrecorded meal

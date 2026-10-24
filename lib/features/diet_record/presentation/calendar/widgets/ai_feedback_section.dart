@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/clock.dart';
-import 'package:switchon_diet/models/diet_record.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_verdict.dart';
 
 class AiFeedbackSection extends StatelessWidget {
   final DietRecord? record;
@@ -180,7 +181,9 @@ class AiFeedbackSection extends StatelessWidget {
     final checklist = record!.dailyChecklist;
 
     // Check for forbidden foods
-    final hasForbidden = record!.meals.any((m) => m.aiStatus == 'FORBIDDEN');
+    final hasForbidden = record!.meals.any(
+      (m) => m.verdict == MealVerdict.forbidden,
+    );
     if (hasForbidden) {
       missed.add('식단 (금기식품 섭취)');
     }

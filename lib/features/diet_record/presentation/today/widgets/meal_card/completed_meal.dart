@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_verdict.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/widgets/meal_card/status_badge.dart';
-import 'package:switchon_diet/models/meal_record.dart';
 
 class CompletedMeal extends StatelessWidget {
   final MealRecord meal;
@@ -288,7 +289,7 @@ class CompletedMeal extends StatelessWidget {
   }
 
   _StatusInfo _getStatusInfo() {
-    if (meal.aiStatus == 'ALLOWED') {
+    if (meal.verdict == MealVerdict.allowed) {
       return _StatusInfo(
         badgeLabel: '허용',
         badgeIcon: Icons.check_circle,
@@ -302,7 +303,7 @@ class CompletedMeal extends StatelessWidget {
         feedbackBorderColor: Colors.transparent,
         feedbackTextColor: const Color(0xFF059669),
       );
-    } else if (meal.aiStatus == 'WARNING') {
+    } else if (meal.verdict == MealVerdict.warning) {
       return _StatusInfo(
         badgeLabel: '주의',
         badgeIcon: Icons.warning,
@@ -316,7 +317,7 @@ class CompletedMeal extends StatelessWidget {
         feedbackBorderColor: const Color(0xFFFDE68A).withValues(alpha: 0.5),
         feedbackTextColor: const Color(0xFFD97706),
       );
-    } else if (meal.aiStatus == 'FORBIDDEN') {
+    } else if (meal.verdict == MealVerdict.forbidden) {
       return _StatusInfo(
         badgeLabel: '금지',
         badgeIcon: Icons.cancel,

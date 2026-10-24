@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets/ai_feedback_section.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets/daily_rules_section.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets/meal_summary_card.dart';
 import 'package:switchon_diet/features/diet_record/presentation/history/diet_history_screen.dart';
 import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
-import 'package:switchon_diet/models/diet_record.dart';
 
 class DayDetails extends StatelessWidget {
   final int selectedDay;
@@ -127,7 +127,10 @@ class DayDetails extends StatelessWidget {
           (meal) => MealSummaryCard(meal: meal, onRecordMeal: onRecordMeal),
         ),
         const SizedBox(height: 16),
-        DailyRulesSection(record: records[selectedDay], dayIdx: selectedDay),
+        DailyRulesSection(
+          record: records[selectedDay],
+          previousRecord: records[selectedDay - 1],
+        ),
         const SizedBox(height: 16),
         AiFeedbackSection(
           record: records[selectedDay],

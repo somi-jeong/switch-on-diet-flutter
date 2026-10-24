@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/dialogs/bedtime_dialogs.dart';
-import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/services/storage_service.dart';
 
 /// A card for recording bedtime.
 /// Encourages users to sleep before midnight for optimal health.
-class BedtimeCard extends StatelessWidget {
+class BedtimeCard extends ConsumerWidget {
   final DietRecord record;
   final int todayIdx;
   final VoidCallback onBedtimeRecorded;
@@ -20,7 +21,7 @@ class BedtimeCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Row(
@@ -126,27 +127,15 @@ class BedtimeCard extends StatelessWidget {
                                 selectedTime.hour,
                                 selectedTime.minute,
                               );
-                              final updated = DietRecord(
-                                date: record.date,
-                                wakeTime: record.wakeTime,
-                                meals: record.meals,
-                                weight: record.weight,
-                                bodyFat: record.bodyFat,
-                                diary: record.diary,
-                                aiFeedback: record.aiFeedback,
-                                weeklySummary: record.weeklySummary,
-                                confession: record.confession,
-                                confessionFeedback: record.confessionFeedback,
-                                bedTime: bedtimeDateTime.toIso8601String(),
-                                warningCount: record.warningCount,
-                                actualBedTime: record.actualBedTime,
-                                bedTimeFeedback: record.bedTimeFeedback,
-                                dailyChecklist: record.dailyChecklist,
-                              );
-                              await StorageService.saveRecord(
-                                updated,
-                                todayIdx,
-                              );
+                              await ref
+                                  .read(dietRecordRepositoryProvider)
+                                  .save(
+                                    todayIdx,
+                                    record.copyWith(
+                                      bedTime: bedtimeDateTime
+                                          .toIso8601String(),
+                                    ),
+                                  );
                               onBedtimeRecorded();
                             }
                           },
