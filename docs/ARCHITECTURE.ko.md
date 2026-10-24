@@ -5,7 +5,7 @@
 
 ## 1. 구조 한눈에 보기
 
-**Clean Architecture로 레이어를 나누고, 화면은 MVVM**으로 구성했습니다. 폴더는 기능(feature) 단위로 나누고,
+Clean Architecture로 레이어를 나누고, 화면은 MVVM으로 구성했습니다. 폴더는 기능(feature) 단위로 나누고,
 각 기능 안에서 다시 레이어를 나눕니다.
 
 | 레이어 | 들어 있는 것 | 의존할 수 있는 대상 |
@@ -14,7 +14,7 @@
 | domain | 엔티티(Freezed), 리포지토리 인터페이스, 유스케이스, 프로그램 규칙 | core의 순수 Dart 코드 |
 | data | Hive 모델·매퍼, 리포지토리 구현, 데이터 소스(Hive 박스, Anthropic API) | domain, core |
 
-**의존성 규칙**: 의존성은 항상 domain 쪽을 향합니다.
+의존성 규칙: 의존성은 항상 domain 쪽을 향합니다.
 
 - domain은 Flutter, Riverpod, Hive, HTTP를 import하지 않습니다.
 - data는 presentation을 모릅니다.
@@ -42,8 +42,8 @@ lib/
 
 ## 3. 화면 상태 (MVVM)
 
-- **View**는 상태를 그리고 사용자 이벤트를 ViewModel에 넘깁니다. 다이얼로그, 내비게이션, 스낵바처럼 `BuildContext`가 필요한 일만 View에 둡니다.
-- **ViewModel**은 Riverpod `Notifier`/`AsyncNotifier`입니다. 화면 하나 또는 항목 하나(`family`)마다 인스턴스가 생기고, 화면을 닫으면 `autoDispose`로 정리됩니다.
+- View는 상태를 그리고 사용자 이벤트를 ViewModel에 넘깁니다. 다이얼로그, 내비게이션, 스낵바처럼 `BuildContext`가 필요한 일만 View에 둡니다.
+- ViewModel은 Riverpod `Notifier`/`AsyncNotifier`입니다. 화면 하나 또는 항목 하나(`family`)마다 인스턴스가 생기고, 화면을 닫으면 `autoDispose`로 정리됩니다.
 - 로딩과 에러는 `AsyncValue`로 표현하고, 데이터 상태는 Freezed 클래스로 표현합니다.
 - 결과가 여러 갈래인 동작은 sealed union으로 돌려줍니다. 예를 들어 `RecordMealOutcome`은 `analyzed`, `analysisFailed`, `notFound` 중 하나입니다.
 - 기록을 쓰는 곳은 리포지토리 하나입니다. Hive 박스가 바뀌면 `dietRecordsProvider` 스트림이 다시 값을 내보내고, 그 스트림을 보는 ViewModel(오늘, 캘린더, 기록)이 모두 다시 계산됩니다. 그래서 다른 화면에 "새로고침하라"고 알릴 필요가 없습니다.
@@ -73,7 +73,7 @@ lib/
 
 ## 5. 유스케이스를 둔 기준
 
-유스케이스는 **로직이 있을 때만** 만듭니다. 단순한 읽기·쓰기는 ViewModel이 리포지토리를 바로 호출합니다.
+유스케이스는 로직이 있을 때만 만듭니다. 단순한 읽기·쓰기는 ViewModel이 리포지토리를 바로 호출합니다.
 
 | 유스케이스 | 맡은 로직 |
 |---|---|
@@ -104,20 +104,20 @@ lib/
 
 ## 7. 시간, AI, 설정
 
-- **시간**: "지금"이 필요한 코드는 모두 `Clock`을 주입받습니다(`clockProvider`).
+- 시간: "지금"이 필요한 코드는 모두 `Clock`을 주입받습니다(`clockProvider`).
   - `JstClock`은 Asia/Tokyo 기준이고, timezone DB를 쓸 수 없으면 UTC+9로 계산합니다.
   - 테스트에서는 `FixedClock`을 씁니다.
-- **AI**: 기능마다 토큰 예산이 다릅니다(식사 판정 500 ~ 주간 요약 3,500).
+- AI: 기능마다 토큰 예산이 다릅니다(식사 판정 500 ~ 주간 요약 3,500).
   - 실패는 `AiFailure`(network, rate limit, credit, server, unexpected, missing key) sealed class로 표현합니다.
-- **API 키**: `--dart-define=ANTHROPIC_API_KEY=...`가 `.env`보다 우선합니다. 키가 없어도 앱은 동작하고, AI 기능만 오류를 보여 줍니다.
+- API 키: `--dart-define=ANTHROPIC_API_KEY=...`가 `.env`보다 우선합니다. 키가 없어도 앱은 동작하고, AI 기능만 오류를 보여 줍니다.
   - 클라이언트가 API를 직접 호출하므로, 공개 배포할 때는 프록시를 두는 것이 좋습니다.
 
 ## 8. 테스트
 
-- **domain**: 인메모리 리포지토리와 `FixedClock`으로 프로그램 규칙과 유스케이스를 검증합니다.
-- **presentation**: `ProviderContainer`에서 리포지토리와 시계를 override해 ViewModel을 검증합니다.
+- domain: 인메모리 리포지토리와 `FixedClock`으로 프로그램 규칙과 유스케이스를 검증합니다.
+- presentation: `ProviderContainer`에서 리포지토리와 시계를 override해 ViewModel을 검증합니다.
   - 예: 기상 시간을 수정해도 데일리 미션이 유지되는지
-- **data**: 임시 디렉터리의 실제 Hive, 기존 포맷 fixture, `http` `MockClient`를 씁니다.
+- data: 임시 디렉터리의 실제 Hive, 기존 포맷 fixture, `http` `MockClient`를 씁니다.
 
 `flutter test`로 85개 단위 테스트를 실행합니다. 위젯 테스트는 아직 없습니다.
 
@@ -127,4 +127,3 @@ lib/
 - 주간 요약은 생성해서 저장하지만, 히스토리 카드에는 고정 문구가 표시됩니다.
 - 식사 알림 스케줄러는 구현되어 있지만 UI에는 아직 연결되지 않았습니다.
 
-코드 규칙은 [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md), 설계 결정 기록은 [`ARCHITECTURE_DECISIONS.md`](ARCHITECTURE_DECISIONS.md)에 있습니다.

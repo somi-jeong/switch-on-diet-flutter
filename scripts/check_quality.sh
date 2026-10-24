@@ -188,7 +188,7 @@ else
     echo ""
     echo "Quick fixes:"
     echo "  1. Run: flutter analyze"
-    echo "  2. Fix the warnings and split oversized files (see docs/CODING_GUIDELINES.md)"
+    echo "  2. Fix the warnings and split oversized files"
     echo "  3. Re-run: ./scripts/check_quality.sh"
 fi
 

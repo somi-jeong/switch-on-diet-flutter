@@ -16,7 +16,7 @@ analyzer:
     strict-inference: true
     strict-raw-types: true
   errors:
-    # Promoted to errors so they fail `flutter analyze` (see docs/CODING_GUIDELINES.md).
+    # Promoted to errors so they fail `flutter analyze`.
     unused_import: error
     unused_local_variable: error
     unused_element: error
