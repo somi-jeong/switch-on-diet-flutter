@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/models/meal_record.dart';
 import 'package:switchon_diet/screens/dialogs/components/meal/late_reason_dialog.dart';
@@ -13,7 +15,6 @@ import 'package:switchon_diet/screens/tabs/widgets/bedtime_card.dart';
 import 'package:switchon_diet/screens/tabs/widgets/daily_missions_card.dart';
 import 'package:switchon_diet/screens/tabs/widgets/fasting_timer_card.dart';
 import 'package:switchon_diet/screens/tabs/widgets/top_info_card.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/meal_timing_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
@@ -165,7 +166,7 @@ class TodayAfterWakeView extends StatelessWidget {
       debugPrint('[MissedMeal] Late reason: $reason');
 
       // Create updated meal with selected time and late reason
-      final now = JstService.now();
+      final now = const JstClock().now();
       final timeParts = selectedTime.split(':');
       final selectedDateTime = DateTime(
         now.year,
@@ -178,7 +179,7 @@ class TodayAfterWakeView extends StatelessWidget {
       final updatedMeal = MealRecord(
         label: meal.label,
         guideText: meal.guideText,
-        eatenAt: JstService.toIso(selectedDateTime),
+        eatenAt: selectedDateTime.toIso8601String(),
         lateReason: reason,
       );
 
@@ -203,7 +204,7 @@ class TodayAfterWakeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final wake = JstService.fromIso(record.wakeTime!);
+    final wake = Jst.parse(record.wakeTime!);
     final wakeHour = wake.hour;
 
     // 17시 이후 기상: 다이어트 진행 불가
@@ -296,7 +297,7 @@ class TodayAfterWakeView extends StatelessWidget {
     }
 
     debugPrint(
-      '[TodayAfterWake] Next meal index: $nextMealIndex, Current time: ${JstService.now()}',
+      '[TodayAfterWake] Next meal index: $nextMealIndex, Current time: ${const JstClock().now()}',
     );
 
     return Stack(

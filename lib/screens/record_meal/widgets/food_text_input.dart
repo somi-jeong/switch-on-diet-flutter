@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
 
 /// Food description text input field
 class FoodTextInput extends StatelessWidget {

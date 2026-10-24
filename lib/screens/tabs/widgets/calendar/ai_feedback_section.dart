@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 
 class AiFeedbackSection extends StatelessWidget {
   final DietRecord? record;
@@ -18,7 +18,7 @@ class AiFeedbackSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 오후 10시(22시) 이후에만 표시
-    final now = JstService.now();
+    final now = const JstClock().now();
     final isAfter10PM = now.hour >= 22;
 
     // 과거 날짜는 항상 표시, 오늘 날짜는 22시 이후에만 표시

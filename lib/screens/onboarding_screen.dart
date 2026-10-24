@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/models/app_settings.dart';
 import 'package:switchon_diet/screens/main_screen.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -19,7 +19,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    final now = JstService.now();
+    final now = const JstClock().now();
     // Remove time component for date comparison
     _selectedDate = DateTime(now.year, now.month, now.day);
     _currentMonth = DateTime(now.year, now.month);

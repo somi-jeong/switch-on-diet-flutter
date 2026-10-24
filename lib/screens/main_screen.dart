@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/models/app_settings.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/screens/dialogs/meal_dialogs.dart';
@@ -10,7 +11,6 @@ import 'package:switchon_diet/screens/tabs/my_tab.dart';
 import 'package:switchon_diet/screens/tabs/today_tab.dart';
 import 'package:switchon_diet/screens/weekly_feedback_screen.dart';
 import 'package:switchon_diet/services/daily_analysis_service.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 import 'package:switchon_diet/services/weekly_analysis_service.dart';
 
@@ -86,7 +86,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
     // Calculate today's day index
     final startDate = DateTime.parse(_settings.startDate);
-    final now = JstService.now();
+    final now = const JstClock().now();
     final diff = now.difference(startDate).inDays + 1;
     _todayIdx = diff.clamp(1, 28);
     _week = ((_todayIdx - 1) ~/ 7 + 1).clamp(1, 4);

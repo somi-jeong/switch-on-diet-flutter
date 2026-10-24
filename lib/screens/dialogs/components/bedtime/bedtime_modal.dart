@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/screens/dialogs/components/bedtime/bedtime_warning_box.dart';
 import 'package:switchon_diet/screens/dialogs/components/bedtime/late_bedtime_warning_dialog.dart';
 

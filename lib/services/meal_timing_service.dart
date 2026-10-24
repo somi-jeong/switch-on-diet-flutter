@@ -1,5 +1,6 @@
 import 'package:switchon_diet/constants/meal_offsets.dart';
-import 'package:switchon_diet/services/jst_service.dart';
+import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 
 /// Service to check if meal times have passed and determine meal status
 class MealTimingService {
@@ -18,15 +19,15 @@ class MealTimingService {
     required String wakeTimeIso,
     required String mealLabel,
   }) {
-    final wakeTime = JstService.fromIso(wakeTimeIso);
-    final currentTime = JstService.now();
+    final wakeTime = Jst.parse(wakeTimeIso);
+    final currentTime = const JstClock().now();
 
     // Get meal window offsets
     final offset = _getMealOffset(mealLabel);
     if (offset == null) return false;
 
     // Calculate meal end time
-    final mealEndTime = JstService.addMinutes(wakeTime, offset.endMins);
+    final mealEndTime = wakeTime.add(Duration(minutes: offset.endMins));
 
     // Check if current time is past meal end time
     return currentTime.isAfter(mealEndTime);
@@ -37,14 +38,14 @@ class MealTimingService {
     required String wakeTimeIso,
     required String mealLabel,
   }) {
-    final wakeTime = JstService.fromIso(wakeTimeIso);
+    final wakeTime = Jst.parse(wakeTimeIso);
     final offset = _getMealOffset(mealLabel);
     if (offset == null) return '';
 
-    final startTime = JstService.addMinutes(wakeTime, offset.startMins);
-    final endTime = JstService.addMinutes(wakeTime, offset.endMins);
+    final startTime = wakeTime.add(Duration(minutes: offset.startMins));
+    final endTime = wakeTime.add(Duration(minutes: offset.endMins));
 
-    return '${JstService.format(startTime)} ~ ${JstService.format(endTime)}';
+    return '${Jst.hourMinute(startTime)} ~ ${Jst.hourMinute(endTime)}';
   }
 
   /// Get recommended meal time (middle of the window)
@@ -52,13 +53,13 @@ class MealTimingService {
     required String wakeTimeIso,
     required String mealLabel,
   }) {
-    final wakeTime = JstService.fromIso(wakeTimeIso);
+    final wakeTime = Jst.parse(wakeTimeIso);
     final offset = _getMealOffset(mealLabel);
     if (offset == null) return '';
 
     final middleMins = (offset.startMins + offset.endMins) ~/ 2;
-    final recommendedTime = JstService.addMinutes(wakeTime, middleMins);
+    final recommendedTime = wakeTime.add(Duration(minutes: middleMins));
 
-    return JstService.format(recommendedTime);
+    return Jst.hourMinute(recommendedTime);
   }
 }

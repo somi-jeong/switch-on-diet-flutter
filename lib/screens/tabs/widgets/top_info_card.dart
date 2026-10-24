@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
-import 'package:switchon_diet/services/jst_service.dart';
-import 'package:switchon_diet/utils/time_validator.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/core/utils/time_validator.dart';
 
 /// The top information card shown after waking up.
 /// Displays program info, wake time (with warning if late), and completion progress.
@@ -106,7 +106,7 @@ class TopInfoCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          '기상 ${JstService.format(wakeTime)}',
+                          '기상 ${Jst.hourMinute(wakeTime)}',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,

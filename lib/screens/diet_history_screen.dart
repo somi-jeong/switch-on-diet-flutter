@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/screens/diet_history/widgets/diet_history_day_card.dart';
 import 'package:switchon_diet/screens/past_date_meal_selection_screen.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 class DietHistoryScreen extends StatefulWidget {
@@ -109,8 +109,8 @@ class _DietHistoryScreenState extends State<DietHistoryScreen> {
 
       // Get the last meal's eatenAt time
       final lastMeal = checkedMeals.last;
-      final lastMealTime = JstService.fromIso(lastMeal.eatenAt!);
-      final wakeTime = JstService.fromIso(record.wakeTime!);
+      final lastMealTime = Jst.parse(lastMeal.eatenAt!);
+      final wakeTime = Jst.parse(record.wakeTime!);
 
       var duration = wakeTime.difference(lastMealTime);
 
@@ -130,8 +130,8 @@ class _DietHistoryScreenState extends State<DietHistoryScreen> {
   String _getSleepDuration(DietRecord record) {
     if (record.bedTime == null || record.wakeTime == null) return '--';
     try {
-      final bedTime = JstService.fromIso(record.bedTime!);
-      final wakeTime = JstService.fromIso(record.wakeTime!);
+      final bedTime = Jst.parse(record.bedTime!);
+      final wakeTime = Jst.parse(record.wakeTime!);
       var duration = wakeTime.difference(bedTime);
 
       // If wake time is before bed time, add 24 hours

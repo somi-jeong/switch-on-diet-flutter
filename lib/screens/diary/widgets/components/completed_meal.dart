@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/models/meal_record.dart';
 import 'package:switchon_diet/screens/diary/widgets/components/status_badge.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 
 class CompletedMeal extends StatelessWidget {
   final MealRecord meal;
@@ -68,9 +68,7 @@ class CompletedMeal extends StatelessWidget {
                             meal.recordedAt!.isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Text(
-                            JstService.format(
-                              JstService.fromIso(meal.recordedAt!),
-                            ),
+                            Jst.hourMinute(Jst.parse(meal.recordedAt!)),
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,

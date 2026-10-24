@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/screens/widgets/weekly_chart_widgets.dart';
 
 /// Meal compliance card

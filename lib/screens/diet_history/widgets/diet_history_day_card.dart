@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/screens/diet_history/widgets/components/diet_history_meals_section.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 
 /// Individual day card in diet history showing sleep, meals, and missions
 class DietHistoryDayCard extends StatelessWidget {
@@ -26,10 +26,10 @@ class DietHistoryDayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wakeTime = record.wakeTime != null
-        ? JstService.format(JstService.fromIso(record.wakeTime!))
+        ? Jst.hourMinute(Jst.parse(record.wakeTime!))
         : '--';
     final bedTime = record.bedTime != null
-        ? JstService.format(JstService.fromIso(record.bedTime!))
+        ? Jst.hourMinute(Jst.parse(record.bedTime!))
         : '--';
 
     return Container(

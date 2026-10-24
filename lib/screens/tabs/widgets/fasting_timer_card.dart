@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
 
 /// A card that displays the current fasting duration and progress.
 /// Shows time elapsed since wake time with a visual progress bar.

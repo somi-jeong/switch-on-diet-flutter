@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/screens/chat_history_screen.dart';
 import 'package:switchon_diet/screens/dialogs/settings_dialogs.dart';
 import 'package:switchon_diet/screens/diet_history_screen.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 class MyTab extends StatefulWidget {
@@ -333,7 +333,7 @@ class _MyTabState extends State<MyTab> with RouteAware {
     final endDateStr =
         '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
 
-    final now = JstService.now();
+    final now = const JstClock().now();
     final start = DateTime.parse(widget.startDate);
     final currentDay = now.difference(start).inDays + 1;
     final todayIdx = currentDay.clamp(1, 28);

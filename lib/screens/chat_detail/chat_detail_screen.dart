@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/constants/diet_data.dart';
+import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/models/chat_message.dart';
 import 'package:switchon_diet/screens/chat_detail/widgets/chat_detail_widgets.dart';
 import 'package:switchon_diet/services/claude_service.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 class ChatDetailScreen extends StatefulWidget {
@@ -83,7 +83,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final userMsg = ChatMessage(
       role: 'user',
       text: text,
-      timestamp: JstService.toIso(JstService.now()),
+      timestamp: const JstClock().now().toIso8601String(),
     );
 
     setState(() {
@@ -147,7 +147,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       final aiMsg = ChatMessage(
         role: 'assistant',
         text: response,
-        timestamp: JstService.toIso(JstService.now()),
+        timestamp: const JstClock().now().toIso8601String(),
       );
 
       setState(() => _msgs.add(aiMsg));
@@ -159,7 +159,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       final errorMsg = ChatMessage(
         role: 'assistant',
         text: '죄송해요, 일시적인 오류가 발생했어요. 다시 시도해주세요.',
-        timestamp: JstService.toIso(JstService.now()),
+        timestamp: const JstClock().now().toIso8601String(),
       );
       setState(() => _msgs.add(errorMsg));
     } finally {

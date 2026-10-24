@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/services/claude_service.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 class WeeklyAnalysisService {
@@ -12,7 +13,7 @@ class WeeklyAnalysisService {
     required String startDate,
   }) async {
     try {
-      final now = JstService.now();
+      final now = const JstClock().now();
       final currentHour = now.hour;
 
       // Check if current time is between 17:00-19:00 JST
@@ -59,8 +60,8 @@ class WeeklyAnalysisService {
                 meal.recordedAt!.isNotEmpty &&
                 meal.eatenAt != null &&
                 meal.eatenAt!.isNotEmpty) {
-              final recordedTime = JstService.fromIso(meal.recordedAt!);
-              final eatenTime = JstService.fromIso(meal.eatenAt!);
+              final recordedTime = Jst.parse(meal.recordedAt!);
+              final eatenTime = Jst.parse(meal.eatenAt!);
               final diffHours = recordedTime
                   .difference(eatenTime)
                   .inHours
@@ -82,7 +83,7 @@ class WeeklyAnalysisService {
           // Calculate wake time status
           String wakeTimeStatus = '정상';
           if (record.wakeTime != null && record.wakeTime!.isNotEmpty) {
-            final wakeTime = JstService.fromIso(record.wakeTime!);
+            final wakeTime = Jst.parse(record.wakeTime!);
             final wakeHour = wakeTime.hour;
             wakeTimeStatus = wakeHour >= 17
                 ? '완전비정상'
@@ -136,7 +137,7 @@ class WeeklyAnalysisService {
       // Store summary in today's record
       var record = todayRecord;
       if (record == null) {
-        final todayDate = JstService.formatDate(now);
+        final todayDate = Jst.isoDate(now);
         record = DietRecord(date: todayDate, weeklySummary: summary);
       } else {
         record.weeklySummary = summary;
@@ -171,8 +172,8 @@ class WeeklyAnalysisService {
                 meal.recordedAt!.isNotEmpty &&
                 meal.eatenAt != null &&
                 meal.eatenAt!.isNotEmpty) {
-              final recordedTime = JstService.fromIso(meal.recordedAt!);
-              final eatenTime = JstService.fromIso(meal.eatenAt!);
+              final recordedTime = Jst.parse(meal.recordedAt!);
+              final eatenTime = Jst.parse(meal.eatenAt!);
               final diffHours = recordedTime
                   .difference(eatenTime)
                   .inHours
@@ -194,7 +195,7 @@ class WeeklyAnalysisService {
           // Calculate wake time status
           String wakeTimeStatus = '정상';
           if (record.wakeTime != null && record.wakeTime!.isNotEmpty) {
-            final wakeTime = JstService.fromIso(record.wakeTime!);
+            final wakeTime = Jst.parse(record.wakeTime!);
             final wakeHour = wakeTime.hour;
             wakeTimeStatus = wakeHour >= 17
                 ? '완전비정상'

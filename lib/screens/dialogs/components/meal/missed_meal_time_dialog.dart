@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
-import 'package:switchon_diet/services/jst_service.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/clock.dart';
 
 /// Dialog for selecting the time when a missed meal was actually eaten
 /// Shows when user wants to record a meal after its recommended time window
@@ -36,7 +36,7 @@ class _MissedMealTimeDialogState extends State<MissedMealTimeDialog> {
       }
     } catch (e) {
       // Use current time if recommended time parsing fails
-      final now = JstService.now();
+      final now = const JstClock().now();
       selectedHour = now.hour;
       selectedMinute = now.minute;
     }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:switchon_diet/utils/time_validator.dart';
+import 'package:switchon_diet/core/utils/time_validator.dart';
 
 void main() {
   group('TimeValidator', () {

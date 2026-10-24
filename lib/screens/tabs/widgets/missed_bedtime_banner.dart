@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/screens/dialogs/bedtime_dialogs.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 /// Banner that appears when the user missed recording bedtime yesterday.
@@ -70,7 +70,7 @@ class MissedBedtimeBanner extends StatelessWidget {
                 // 어제 날짜의 bedTime 저장
                 final yesterdayRecord = StorageService.getRecord(yesterdayIdx);
                 if (yesterdayRecord != null) {
-                  final now = JstService.now();
+                  final now = const JstClock().now();
                   final yesterday = now.subtract(const Duration(days: 1));
                   final bedtimeDateTime = DateTime(
                     yesterday.year,

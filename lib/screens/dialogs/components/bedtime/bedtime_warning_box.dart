@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
 
 class BedtimeWarningBox extends StatelessWidget {
   const BedtimeWarningBox({super.key});

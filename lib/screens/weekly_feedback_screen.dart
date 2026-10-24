@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/screens/widgets/score_chart_widgets.dart';
 import 'package:switchon_diet/screens/widgets/summary_card_widgets.dart';
 import 'package:switchon_diet/screens/widgets/weekly_chart_widgets.dart';
 import 'package:switchon_diet/screens/widgets/weight_chart_widgets.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 class WeeklyFeedbackScreen extends StatelessWidget {
@@ -113,7 +114,7 @@ class WeeklyFeedbackScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${JstService.formatDate(JstService.now())} JST',
+                    '${Jst.isoDate(const JstClock().now())} JST',
                     style: const TextStyle(
                       fontSize: 11,
                       color: Color(0x66FFFFFF),

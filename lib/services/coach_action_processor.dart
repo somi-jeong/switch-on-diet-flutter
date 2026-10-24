@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:switchon_diet/constants/meal_offsets.dart';
+import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/models/coach_action.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/models/meal_record.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 /// Processes coach AI actions (wake, meal, skip, sleep)
@@ -52,10 +53,10 @@ class CoachActionProcessor {
       final minute = int.tryParse(parts[1].trim());
       if (hour == null || minute == null) return;
 
-      final now = JstService.now();
+      final now = const JstClock().now();
       final wakeTime = DateTime(now.year, now.month, now.day, hour, minute);
-      final wakeTimeIso = JstService.toIso(wakeTime);
-      final dateStr = JstService.formatDate(wakeTime);
+      final wakeTimeIso = wakeTime.toIso8601String();
+      final dateStr = Jst.isoDate(wakeTime);
 
       // Get or create record
       var record = StorageService.getRecord(todayIdx);
@@ -93,7 +94,9 @@ class CoachActionProcessor {
       // Simple meal recording without AI analysis
       record.meals[mealIndex].checked = true;
       record.meals[mealIndex].foodText = foods;
-      record.meals[mealIndex].eatenAt = JstService.toIso(JstService.now());
+      record.meals[mealIndex].eatenAt = const JstClock()
+          .now()
+          .toIso8601String();
 
       await StorageService.saveRecord(record, todayIdx);
     } catch (e) {
@@ -140,9 +143,9 @@ class CoachActionProcessor {
       final minute = int.tryParse(parts[1].trim());
       if (hour == null || minute == null) return;
 
-      final now = JstService.now();
+      final now = const JstClock().now();
       final bedTime = DateTime(now.year, now.month, now.day, hour, minute);
-      final bedTimeIso = JstService.toIso(bedTime);
+      final bedTimeIso = bedTime.toIso8601String();
 
       final record = StorageService.getRecord(todayIdx);
       if (record == null) return;

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:switchon_diet/constants/colors.dart';
 import 'package:switchon_diet/constants/meal_offsets.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/models/app_settings.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/models/meal_record.dart';
@@ -11,7 +13,6 @@ import 'package:switchon_diet/screens/tabs/widgets/today_before_wake_view.dart';
 import 'package:switchon_diet/screens/tabs/widgets/today_header.dart';
 import 'package:switchon_diet/screens/tabs/widgets/today_widgets.dart';
 import 'package:switchon_diet/screens/tabs/widgets/wake_time_sheet.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 class TodayTab extends ConsumerStatefulWidget {
@@ -44,13 +45,13 @@ class _TodayTabState extends ConsumerState<TodayTab> {
     }
     _settings = settings;
     final startDate = DateTime.parse(settings.startDate);
-    final now = JstService.now();
+    final now = const JstClock().now();
     final diff = now.difference(startDate).inDays + 1;
     _todayIdx = diff.clamp(1, 28);
     _week = ((_todayIdx - 1) ~/ 7 + 1).clamp(1, 4);
     var record = StorageService.getRecord(_todayIdx);
     if (record == null) {
-      record = DietRecord(date: JstService.formatDate(now), meals: []);
+      record = DietRecord(date: Jst.isoDate(now), meals: []);
       await StorageService.saveRecord(record, _todayIdx);
     }
     setState(() {
@@ -127,7 +128,7 @@ class _TodayTabState extends ConsumerState<TodayTab> {
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         child: WakeTimeSheet(
-          targetDate: JstService.now(),
+          targetDate: const JstClock().now(),
           currentDayIdx: _todayIdx,
         ),
       ),
@@ -140,8 +141,8 @@ class _TodayTabState extends ConsumerState<TodayTab> {
 
   String _fastingText() {
     if (_record?.wakeTime == null) return '--';
-    final wake = JstService.fromIso(_record!.wakeTime!);
-    final now = JstService.now();
+    final wake = Jst.parse(_record!.wakeTime!);
+    final now = const JstClock().now();
     final diff = now.difference(wake);
     if (diff.isNegative) return '--';
     final hours = diff.inHours;
@@ -204,7 +205,7 @@ class _TodayTabState extends ConsumerState<TodayTab> {
                           hasMissedBedtime: _checkMissedBedtime(),
                           yesterdayIdx: _todayIdx - 1,
                           onWakeTimeRecorded: () async =>
-                              await _saveWakeTime(JstService.now()),
+                              await _saveWakeTime(const JstClock().now()),
                           onMissedBedtimeRecorded: () {
                             setState(() {});
                             widget.onDataChanged?.call();

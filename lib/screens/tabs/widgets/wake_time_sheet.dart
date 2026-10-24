@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:switchon_diet/constants/colors.dart';
-import 'package:switchon_diet/services/jst_service.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 class WakeTimeSheet extends StatefulWidget {
@@ -22,7 +22,7 @@ class _WakeTimeSheetState extends State<WakeTimeSheet> {
   @override
   void initState() {
     super.initState();
-    final now = JstService.now();
+    final now = const JstClock().now();
     _hour = now.hour;
     _minute = now.minute;
     _timeController = TextEditingController(
@@ -38,7 +38,7 @@ class _WakeTimeSheetState extends State<WakeTimeSheet> {
   }
 
   DateTime _toJst() {
-    final baseDate = widget.targetDate ?? JstService.now();
+    final baseDate = widget.targetDate ?? const JstClock().now();
     return DateTime(
       baseDate.year,
       baseDate.month,

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/screens/dialogs/bedtime_dialogs.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 /// A card for recording bedtime.
@@ -118,7 +118,7 @@ class BedtimeCard extends StatelessWidget {
                             );
                             if (selectedTime != null && context.mounted) {
                               // 오늘 날짜의 bedTime 저장
-                              final now = JstService.now();
+                              final now = const JstClock().now();
                               final bedtimeDateTime = DateTime(
                                 now.year,
                                 now.month,

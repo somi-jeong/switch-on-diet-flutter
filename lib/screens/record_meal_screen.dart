@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
 import 'package:switchon_diet/constants/diet_data.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/models/meal_record.dart';
 import 'package:switchon_diet/screens/dialogs/meal_dialogs.dart';
 import 'package:switchon_diet/screens/record_meal/widgets/ai_coach_message_card.dart';
@@ -9,7 +11,6 @@ import 'package:switchon_diet/screens/record_meal/widgets/meal_time_input.dart';
 import 'package:switchon_diet/screens/record_meal/widgets/record_meal_actions.dart';
 import 'package:switchon_diet/screens/record_meal/widgets/record_meal_header.dart';
 import 'package:switchon_diet/services/claude_service.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 class RecordMealScreen extends StatefulWidget {
@@ -48,16 +49,16 @@ class _RecordMealScreenState extends State<RecordMealScreen> {
       _textController.text = meal.foodText ?? '';
 
       if (meal.eatenAt != null) {
-        final eatenTime = JstService.fromIso(meal.eatenAt!);
+        final eatenTime = Jst.parse(meal.eatenAt!);
         _hour = eatenTime.hour;
         _minute = widget.isPastDate ? 0 : eatenTime.minute;
       } else {
-        final now = JstService.now();
+        final now = const JstClock().now();
         _hour = now.hour;
         _minute = widget.isPastDate ? 0 : now.minute;
       }
     } else {
-      final now = JstService.now();
+      final now = const JstClock().now();
       _hour = now.hour;
       _minute = widget.isPastDate ? 0 : now.minute;
     }
@@ -99,15 +100,15 @@ class _RecordMealScreenState extends State<RecordMealScreen> {
 
     final foodText = _textController.text.trim();
     final mealTime = DateTime(
-      JstService.now().year,
-      JstService.now().month,
-      JstService.now().day,
+      const JstClock().now().year,
+      const JstClock().now().month,
+      const JstClock().now().day,
       _hour,
       _minute,
     );
 
     debugPrint(
-      '[RecordMeal] Saving ${widget.mealType} at ${JstService.toIso(mealTime)}',
+      '[RecordMeal] Saving ${widget.mealType} at ${mealTime.toIso8601String()}',
     );
     debugPrint('[RecordMeal] Food text: $foodText');
 
@@ -143,8 +144,8 @@ class _RecordMealScreenState extends State<RecordMealScreen> {
 
       // Update meal record
       meal.foodText = foodText;
-      meal.eatenAt = JstService.toIso(mealTime);
-      meal.recordedAt = JstService.toIso(JstService.now());
+      meal.eatenAt = mealTime.toIso8601String();
+      meal.recordedAt = const JstClock().now().toIso8601String();
       meal.checked = true;
       meal.skipped = false;
 
@@ -162,7 +163,7 @@ class _RecordMealScreenState extends State<RecordMealScreen> {
       }
 
       final startDate = DateTime.parse(settings.startDate);
-      final now = JstService.now();
+      final now = const JstClock().now();
       final daysSinceStart = now.difference(startDate).inDays + 1;
       final week = ((daysSinceStart - 1) ~/ 7 + 1).clamp(1, 4);
 

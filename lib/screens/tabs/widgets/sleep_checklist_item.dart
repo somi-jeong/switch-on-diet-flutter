@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 
 /// A specialized checklist item for sleep tracking.
 /// Calculates and displays sleep duration and checks if it meets the 6-hour goal.
@@ -15,8 +15,8 @@ class SleepChecklistItem extends StatelessWidget {
     // Calculate sleep duration from bedTime to wakeTime
     String sleepDuration = '--';
     if (record?.bedTime != null && record?.wakeTime != null) {
-      final bedTime = JstService.fromIso(record!.bedTime!);
-      final wakeTime = JstService.fromIso(record!.wakeTime!);
+      final bedTime = Jst.parse(record!.bedTime!);
+      final wakeTime = Jst.parse(record!.wakeTime!);
       final duration = wakeTime.difference(bedTime);
       if (!duration.isNegative) {
         final hours = duration.inHours;
@@ -31,9 +31,9 @@ class SleepChecklistItem extends StatelessWidget {
         record != null &&
         record!.bedTime != null &&
         record!.wakeTime != null &&
-        JstService.fromIso(
+        Jst.parse(
               record!.wakeTime!,
-            ).difference(JstService.fromIso(record!.bedTime!)).inHours >=
+            ).difference(Jst.parse(record!.bedTime!)).inHours >=
             6;
 
     return Row(

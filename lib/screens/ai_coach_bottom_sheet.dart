@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
 import 'package:switchon_diet/constants/diet_data.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/models/chat_message.dart';
 import 'package:switchon_diet/models/coach_action.dart';
 import 'package:switchon_diet/screens/ai_coach_widgets.dart';
 import 'package:switchon_diet/screens/dialogs/components/api_error_dialog.dart';
 import 'package:switchon_diet/services/claude_service.dart';
 import 'package:switchon_diet/services/coach_action_processor.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/parsers/claude_api_client.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
@@ -78,7 +79,7 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
           ? StorageService.getRecord(widget.todayIdx - 1)
           : null;
 
-      final now = JstService.now();
+      final now = const JstClock().now();
       final currentHour = now.hour;
 
       // 상태 분석
@@ -109,7 +110,7 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
         if (todayRecord.wakeTime == null) {
           issues.add('오늘 기상 시간을 입력하지 않으셨네요');
         } else {
-          final wake = JstService.fromIso(todayRecord.wakeTime!);
+          final wake = Jst.parse(todayRecord.wakeTime!);
           if (wake.hour >= 9) {
             issues.add('${wake.hour}시 ${wake.minute}분 기상으로 늦은 편이에요');
           }
@@ -200,7 +201,7 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
       final message = ChatMessage(
         role: 'assistant',
         text: greeting,
-        timestamp: JstService.toIso(JstService.now()),
+        timestamp: const JstClock().now().toIso8601String(),
       );
 
       setState(() {
@@ -231,7 +232,7 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
     final userMsg = ChatMessage(
       role: 'user',
       text: text,
-      timestamp: JstService.toIso(JstService.now()),
+      timestamp: const JstClock().now().toIso8601String(),
     );
 
     setState(() {
@@ -317,7 +318,7 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
       final aiMsg = ChatMessage(
         role: 'assistant',
         text: parsed.cleanedText,
-        timestamp: JstService.toIso(JstService.now()),
+        timestamp: const JstClock().now().toIso8601String(),
       );
 
       setState(() => _messages.add(aiMsg));
@@ -367,7 +368,7 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
       final errorMsg = ChatMessage(
         role: 'assistant',
         text: '죄송해요, 예기치 않은 오류가 발생했어요. 다시 시도해주세요.',
-        timestamp: JstService.toIso(JstService.now()),
+        timestamp: const JstClock().now().toIso8601String(),
       );
       setState(() => _messages.add(errorMsg));
     } finally {

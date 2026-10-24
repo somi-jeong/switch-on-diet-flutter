@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
 
 /// A single checklist item widget used in the daily missions card.
 /// Displays an icon, title, subtitle, and checkbox that can be toggled.

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/core/utils/time_validator.dart';
 import 'package:switchon_diet/models/meal_record.dart';
 import 'package:switchon_diet/screens/dialogs/wake_dialogs.dart';
 import 'package:switchon_diet/screens/diary/widgets/meal_card.dart';
 import 'package:switchon_diet/screens/tabs/widgets/missed_bedtime_banner.dart';
-import 'package:switchon_diet/services/jst_service.dart';
-import 'package:switchon_diet/utils/time_validator.dart';
 
 /// The view shown before the user records their wake time.
 /// Displays a wake-up card with late time warnings and locked meal placeholders.
@@ -38,7 +38,7 @@ class TodayBeforeWakeView extends StatelessWidget {
     ];
 
     // 기상 시간이 늦었는지 체크
-    final now = JstService.now();
+    final now = const JstClock().now();
     final currentTime = TimeOfDay.fromDateTime(now);
     final isCurrentLate = TimeValidator.isWakeTimeLate(currentTime);
 

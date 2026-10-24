@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_theme.dart';
 import 'package:switchon_diet/screens/main_screen.dart';
 import 'package:switchon_diet/screens/onboarding_screen.dart';
 import 'package:switchon_diet/services/notification_service.dart';
@@ -103,12 +103,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: '스위치온 다이어트',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: kMidGreen),
-        scaffoldBackgroundColor: kBgColor,
-        fontFamily: '-apple-system',
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light,
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

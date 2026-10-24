@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/screens/chat_history/widgets/daily_feedback_card.dart';
 import 'package:switchon_diet/screens/chat_history/widgets/history_item.dart';
 import 'package:switchon_diet/screens/chat_history/widgets/weekly_summary_card.dart';

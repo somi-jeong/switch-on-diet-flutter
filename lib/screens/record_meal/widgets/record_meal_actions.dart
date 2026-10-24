@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
 
 /// Bottom action buttons for RecordMealScreen
 class RecordMealActions extends StatelessWidget {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/models/diet_record.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 
 /// A card that displays AI coach feedback and missed rules.
 /// Shows a status badge (perfect, normal, worst) based on score and lists
@@ -46,7 +46,7 @@ class AiFeedbackCard extends StatelessWidget {
 
     // 늦은 기상 체크
     if (record.wakeTime != null) {
-      final wakeTime = JstService.fromIso(record.wakeTime!);
+      final wakeTime = Jst.parse(record.wakeTime!);
       final wakeTimeOfDay = TimeOfDay.fromDateTime(wakeTime);
       if (wakeTimeOfDay.hour > 9 ||
           (wakeTimeOfDay.hour == 9 && wakeTimeOfDay.minute > 0)) {
@@ -56,8 +56,8 @@ class AiFeedbackCard extends StatelessWidget {
 
     // 수면 부족 체크 (6시간 미만)
     if (record.bedTime != null && record.wakeTime != null) {
-      final bedTime = JstService.fromIso(record.bedTime!);
-      final wakeTime = JstService.fromIso(record.wakeTime!);
+      final bedTime = Jst.parse(record.bedTime!);
+      final wakeTime = Jst.parse(record.wakeTime!);
       final sleepDuration = wakeTime.difference(bedTime);
       if (sleepDuration.inHours < 6) {
         missedRules.add('수면 부족');

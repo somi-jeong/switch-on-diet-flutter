@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/services/claude_service.dart';
-import 'package:switchon_diet/services/jst_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 class DailyAnalysisService {
@@ -10,7 +11,7 @@ class DailyAnalysisService {
     required String startDate,
   }) async {
     try {
-      final now = JstService.now();
+      final now = const JstClock().now();
       final currentHour = now.hour;
 
       // Check if current time is between 23:00-23:59 JST
@@ -46,7 +47,7 @@ class DailyAnalysisService {
       }
 
       // Calculate statistics
-      final wakeTime = JstService.fromIso(todayRecord.wakeTime!);
+      final wakeTime = Jst.parse(todayRecord.wakeTime!);
       final fastingHours = now.difference(wakeTime).inHours;
 
       final activeMeals = todayRecord.meals.where((m) => !m.skipped).toList();
@@ -130,7 +131,7 @@ class DailyAnalysisService {
     required String startDate,
   }) async {
     try {
-      final now = JstService.now();
+      final now = const JstClock().now();
       final start = DateTime.parse(startDate);
       final diff = now.difference(start).inDays + 1;
       final todayIdx = diff.clamp(1, 28);
@@ -147,7 +148,7 @@ class DailyAnalysisService {
       }
 
       // Calculate statistics
-      final wakeTime = JstService.fromIso(todayRecord.wakeTime!);
+      final wakeTime = Jst.parse(todayRecord.wakeTime!);
       final fastingHours = now.difference(wakeTime).inHours;
 
       final activeMeals = todayRecord.meals.where((m) => !m.skipped).toList();

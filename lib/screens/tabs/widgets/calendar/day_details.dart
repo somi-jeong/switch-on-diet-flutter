@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/screens/diet_history_screen.dart';
 import 'package:switchon_diet/screens/tabs/widgets/calendar/ai_feedback_section.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/colors.dart';
+import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/screens/chat_history/widgets/history_item.dart';
 
 class DailyFeedbackCard extends StatelessWidget {
