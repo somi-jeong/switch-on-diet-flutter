@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/clock.dart';
 
 /// Dialog for selecting the time when a missed meal was actually eaten
 /// Shows when user wants to record a meal after its recommended time window
 class MissedMealTimeDialog extends StatefulWidget {
   final String mealLabel;
-  final String wakeTimeIso;
   final String recommendedTime;
 
   const MissedMealTimeDialog({
     super.key,
     required this.mealLabel,
-    required this.wakeTimeIso,
     required this.recommendedTime,
   });
 
@@ -27,18 +24,10 @@ class _MissedMealTimeDialogState extends State<MissedMealTimeDialog> {
   @override
   void initState() {
     super.initState();
-    // Initialize with recommended time
-    try {
-      final parts = widget.recommendedTime.split(':');
-      if (parts.length == 2) {
-        selectedHour = int.parse(parts[0]);
-        selectedMinute = int.parse(parts[1]);
-      }
-    } catch (e) {
-      // Use current time if recommended time parsing fails
-      final now = const JstClock().now();
-      selectedHour = now.hour;
-      selectedMinute = now.minute;
+    final parts = widget.recommendedTime.split(':');
+    if (parts.length == 2) {
+      selectedHour = int.tryParse(parts[0]) ?? selectedHour;
+      selectedMinute = int.tryParse(parts[1]) ?? selectedMinute;
     }
   }
 
@@ -258,14 +247,12 @@ class _MissedMealTimeDialogState extends State<MissedMealTimeDialog> {
 Future<String?> showMissedMealTimeDialog(
   BuildContext context, {
   required String mealLabel,
-  required String wakeTimeIso,
   required String recommendedTime,
 }) async {
   return showDialog<String>(
     context: context,
     builder: (context) => MissedMealTimeDialog(
       mealLabel: mealLabel,
-      wakeTimeIso: wakeTimeIso,
       recommendedTime: recommendedTime,
     ),
   );

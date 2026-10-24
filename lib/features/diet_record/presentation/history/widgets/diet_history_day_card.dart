@@ -2,26 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
+import 'package:switchon_diet/features/diet_record/presentation/history/diet_history_state.dart';
 import 'package:switchon_diet/features/diet_record/presentation/history/widgets/diet_history_meals_section.dart';
 
 /// Individual day card in diet history showing sleep, meals, and missions
 class DietHistoryDayCard extends StatelessWidget {
-  final int dayIdx;
-  final String date;
-  final DietRecord record;
-  final int Function(int) getWeek;
-  final String Function(DietRecord) getFastingDuration;
-  final String Function(DietRecord) getSleepDuration;
+  final DayHistory history;
 
-  const DietHistoryDayCard({
-    super.key,
-    required this.dayIdx,
-    required this.date,
-    required this.record,
-    required this.getWeek,
-    required this.getFastingDuration,
-    required this.getSleepDuration,
-  });
+  const DietHistoryDayCard({super.key, required this.history});
+
+  DietRecord get record => history.record;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +66,7 @@ class DietHistoryDayCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              date,
+              history.dateLabel,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
@@ -85,7 +75,7 @@ class DietHistoryDayCard extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              '${getWeek(dayIdx)}주차 $dayIdx일째',
+              '${history.week}주차 ${history.day}일째',
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
@@ -106,7 +96,7 @@ class DietHistoryDayCard extends StatelessWidget {
               ),
             ),
             Text(
-              getFastingDuration(record),
+              history.fastingText,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w900,
@@ -244,7 +234,7 @@ class DietHistoryDayCard extends StatelessWidget {
             Expanded(
               child: _buildMissionBox(
                 Icons.nightlight,
-                getSleepDuration(record),
+                history.sleepText,
                 record.dailyChecklist?['sleep'] ?? false,
               ),
             ),

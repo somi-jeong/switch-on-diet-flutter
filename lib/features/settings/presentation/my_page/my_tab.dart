@@ -179,7 +179,7 @@ class MyTab extends ConsumerWidget {
                     context,
                     '식단 및 수면 기록 보기',
                     null,
-                    () => _navigateToDietHistory(context, todayIdx),
+                    () => _navigateToDietHistory(context),
                     icon: Icons.calendar_today,
                   ),
                   _buildSettingItem(
@@ -330,13 +330,10 @@ class MyTab extends ConsumerWidget {
     );
   }
 
-  void _navigateToDietHistory(BuildContext context, int todayIdx) {
+  void _navigateToDietHistory(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) =>
-            DietHistoryScreen(startDate: startDate, todayIdx: todayIdx),
-      ),
+      MaterialPageRoute<void>(builder: (_) => const DietHistoryScreen()),
     );
   }
 }

@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/features/analysis/analysis_providers.dart';
 import 'package:switchon_diet/features/coach/domain/ai_failure.dart';
-import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
-import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/calendar_tab.dart';
-import 'package:switchon_diet/features/diet_record/presentation/past_day/past_date_meal_selection_screen.dart';
-import 'package:switchon_diet/features/diet_record/presentation/past_day/past_date_warning_dialog.dart';
 import 'package:switchon_diet/features/diet_record/presentation/today/today_tab.dart';
 import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
 import 'package:switchon_diet/features/program/presentation/diet_tab.dart';
@@ -68,35 +63,12 @@ class _MainScreenState extends ConsumerState<MainScreen>
     }
   }
 
-  Future<void> _openPastDay(ChallengeCalendar calendar, int day) async {
-    final date = calendar.dateOf(day);
-    final dateLabel = '${date.month}월 ${date.day}일';
-    final confirmed = await showPastDateMealWarning(context, dateLabel);
-    if (confirmed != true || !mounted) return;
-
-    final records = ref.read(dietRecordRepositoryProvider);
-    if (records.get(day) == null) {
-      await records.save(day, DietRecord(date: Jst.isoDate(date)));
-    }
-    if (!mounted) return;
-
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            PastDateMealSelectionScreen(dayIdx: day, dateStr: dateLabel),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final calendar = ref.watch(challengeCalendarProvider);
     final today = ref.watch(currentDayProvider);
-    if (calendar == null || today == null) return const SizedBox.shrink();
+    final startDate = ref.watch(settingsProvider)?.startDate;
+    if (today == null || startDate == null) return const SizedBox.shrink();
     final week = ChallengeCalendar.weekOf(today);
-    final startDate = ref.watch(settingsProvider)!.startDate;
-    final records = ref.watch(dietRecordsProvider).valueOrNull ?? const {};
 
     return Scaffold(
       backgroundColor: kBgColor,
@@ -108,13 +80,7 @@ class _MainScreenState extends ConsumerState<MainScreen>
               index: _currentTab,
               children: [
                 TodayTab(key: ValueKey('today_$today')),
-                CalendarTab(
-                  key: ValueKey('calendar_$today'),
-                  startDate: startDate,
-                  todayIdx: today,
-                  records: records,
-                  onDateTap: (day) => _openPastDay(calendar, day),
-                ),
+                CalendarTab(key: ValueKey('calendar_$today')),
                 DietTab(
                   key: ValueKey('diet_$today'),
                   week: week,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 import 'package:switchon_diet/features/diet_record/domain/entities/meal_verdict.dart';
 
@@ -8,26 +7,24 @@ class AiFeedbackSection extends StatelessWidget {
   final DietRecord? record;
   final int dayIdx;
   final int todayIdx;
+  final bool isTodayReviewVisible;
 
   const AiFeedbackSection({
     super.key,
     required this.record,
     required this.dayIdx,
     required this.todayIdx,
+    required this.isTodayReviewVisible,
   });
 
   @override
   Widget build(BuildContext context) {
-    // 오후 10시(22시) 이후에만 표시
-    final now = const JstClock().now();
-    final isAfter10PM = now.hour >= 22;
-
     // 과거 날짜는 항상 표시, 오늘 날짜는 22시 이후에만 표시
     final shouldShow =
         record != null &&
         record!.aiFeedback != null &&
         record!.aiFeedback!.isNotEmpty &&
-        (dayIdx < todayIdx || (dayIdx == todayIdx && isAfter10PM));
+        (dayIdx < todayIdx || (dayIdx == todayIdx && isTodayReviewVisible));
 
     if (!shouldShow) {
       return const SizedBox.shrink();

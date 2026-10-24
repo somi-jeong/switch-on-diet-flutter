@@ -67,7 +67,6 @@ class TodayAfterWakeView extends ConsumerWidget {
     final selectedTime = await showMissedMealTimeDialog(
       context,
       mealLabel: meal.label,
-      wakeTimeIso: state.record.wakeTime!,
       recommendedTime: viewModel.recommendedTimeFor(meal.label),
     );
     if (selectedTime == null || !context.mounted) return;

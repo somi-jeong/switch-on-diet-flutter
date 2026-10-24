@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
+import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
 import 'package:switchon_diet/features/diet_record/domain/entities/meal_verdict.dart';
 
 /// Meals section for diet history day card
@@ -131,7 +132,7 @@ class DietHistoryMealsSection extends StatelessWidget {
     );
   }
 
-  Widget _buildMealRow(dynamic meal) {
+  Widget _buildMealRow(MealRecord meal) {
     final isSkipped = meal.skipped == true;
     final isChecked = meal.checked == true;
     final isViolation =
@@ -159,7 +160,7 @@ class DietHistoryMealsSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  meal.label ?? '',
+                  meal.label,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,

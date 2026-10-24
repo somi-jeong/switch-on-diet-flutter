@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
+import 'package:switchon_diet/features/diet_record/presentation/calendar/calendar_state.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets/ai_feedback_section.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets/daily_rules_section.dart';
 import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets/meal_summary_card.dart';
@@ -8,27 +8,19 @@ import 'package:switchon_diet/features/diet_record/presentation/history/diet_his
 import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
 
 class DayDetails extends StatelessWidget {
+  final CalendarState calendar;
   final int selectedDay;
-  final int todayIdx;
-  final String status;
-  final Map<int, DietRecord> records;
-  final List<Map<String, dynamic>> meals;
-  final VoidCallback? onRecordMeal;
-  final String startDate;
 
   const DayDetails({
     super.key,
+    required this.calendar,
     required this.selectedDay,
-    required this.todayIdx,
-    required this.status,
-    required this.records,
-    required this.meals,
-    required this.startDate,
-    this.onRecordMeal,
   });
 
   @override
   Widget build(BuildContext context) {
+    final status = calendar.statusOf(selectedDay);
+    final records = calendar.records;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -43,7 +35,7 @@ class DayDetails extends StatelessWidget {
                 color: kDarkSlate,
               ),
             ),
-            if (status == 'warning')
+            if (status == DayStatus.warning)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -70,16 +62,13 @@ class DayDetails extends StatelessWidget {
                   ],
                 ),
               ),
-            if (status == 'incomplete')
+            if (status == DayStatus.incomplete)
               GestureDetector(
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => DietHistoryScreen(
-                        startDate: startDate,
-                        todayIdx: todayIdx,
-                        initialSelectedDay: selectedDay,
-                      ),
+                      builder: (context) =>
+                          DietHistoryScreen(initialSelectedDay: selectedDay),
                     ),
                   );
                 },
@@ -123,9 +112,8 @@ class DayDetails extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        ...meals.map(
-          (meal) => MealSummaryCard(meal: meal, onRecordMeal: onRecordMeal),
-        ),
+        for (final meal in calendar.mealsOf(selectedDay))
+          MealSummaryCard(meal: meal),
         const SizedBox(height: 16),
         DailyRulesSection(
           record: records[selectedDay],
@@ -135,7 +123,8 @@ class DayDetails extends StatelessWidget {
         AiFeedbackSection(
           record: records[selectedDay],
           dayIdx: selectedDay,
-          todayIdx: todayIdx,
+          todayIdx: calendar.today,
+          isTodayReviewVisible: calendar.isTodayReviewVisible,
         ),
       ],
     );

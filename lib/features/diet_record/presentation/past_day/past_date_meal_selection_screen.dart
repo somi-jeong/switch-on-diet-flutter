@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
-import 'package:switchon_diet/core/time/jst.dart';
-import 'package:switchon_diet/features/diet_record/diet_record_providers.dart';
 import 'package:switchon_diet/features/diet_record/domain/entities/diet_record.dart';
 import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
+import 'package:switchon_diet/features/diet_record/presentation/past_day/past_day_view_model.dart';
 import 'package:switchon_diet/features/meal/presentation/record_meal_screen.dart';
-import 'package:switchon_diet/features/program/domain/meal_schedule.dart';
-import 'package:switchon_diet/features/settings/settings_providers.dart';
 
 /// Screen for selecting which meal to record for a past date.
 /// Allows users to navigate to RecordMealScreen for any meal in a past date's record.
@@ -28,12 +25,7 @@ class PastDateMealSelectionScreen extends ConsumerStatefulWidget {
 
 class _PastDateMealSelectionScreenState
     extends ConsumerState<PastDateMealSelectionScreen> {
-  DateTime get _date =>
-      ref.read(challengeCalendarProvider)!.dateOf(widget.dayIdx);
-
-  DietRecord get _record =>
-      ref.read(dietRecordRepositoryProvider).get(widget.dayIdx) ??
-      DietRecord(date: Jst.isoDate(_date));
+  DietRecord get _record => ref.read(pastDayViewModelProvider(widget.dayIdx));
 
   Future<void> _showWakeTimeDialog() async {
     final selectedHour = await showModalBottomSheet<int>(
@@ -149,27 +141,10 @@ class _PastDateMealSelectionScreenState
       ),
     );
 
-    if (selectedHour != null && mounted) {
-      final date = _date;
-      final wakeTime = DateTime(date.year, date.month, date.day, selectedHour);
-      final meals = [
-        for (final slot in MealSchedule.slots)
-          MealRecord(
-            label: slot.label,
-            guideText:
-                '${Jst.hourMinute(slot.startAfter(wakeTime))} ~ '
-                '${Jst.hourMinute(slot.endAfter(wakeTime))} 예정',
-          ),
-      ];
+    if (selectedHour != null) {
       await ref
-          .read(dietRecordRepositoryProvider)
-          .save(
-            widget.dayIdx,
-            _record.copyWith(
-              wakeTime: wakeTime.toIso8601String(),
-              meals: meals,
-            ),
-          );
+          .read(pastDayViewModelProvider(widget.dayIdx).notifier)
+          .recordWakeHour(selectedHour);
     }
   }
 
@@ -217,14 +192,13 @@ class _PastDateMealSelectionScreenState
           child: Divider(height: 1, color: kBorder),
         ),
       ),
-      body: ref.watch(dietRecordsProvider).isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildMealSelectionView(),
+      body: _buildMealSelectionView(
+        ref.watch(pastDayViewModelProvider(widget.dayIdx)),
+      ),
     );
   }
 
-  Widget _buildMealSelectionView() {
-    final record = _record;
+  Widget _buildMealSelectionView(DietRecord record) {
     if (!record.hasWoken) {
       return Center(
         child: Padding(

@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
+import 'package:switchon_diet/features/diet_record/presentation/calendar/calendar_state.dart';
 
 class MealSummaryCard extends StatelessWidget {
-  final Map<String, dynamic> meal;
-  final VoidCallback? onRecordMeal;
+  final MealSummary meal;
 
-  const MealSummaryCard({super.key, required this.meal, this.onRecordMeal});
+  const MealSummaryCard({super.key, required this.meal});
 
   @override
   Widget build(BuildContext context) {
-    final status = meal['status'];
+    final status = meal.status;
 
-    if (status == 'unrecorded') {
+    if (status == MealSummaryStatus.unrecorded) {
       return _buildUnrecordedMeal();
     }
 
-    final isViolation = status == 'violation';
-    final isSkipped = status == 'skipped';
+    final isViolation = status == MealSummaryStatus.violation;
+    final isSkipped = status == MealSummaryStatus.skipped;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -47,7 +47,7 @@ class MealSummaryCard extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    meal['type'],
+                    meal.label,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -57,7 +57,7 @@ class MealSummaryCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    meal['time'],
+                    meal.time,
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w500,
@@ -78,7 +78,7 @@ class MealSummaryCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    meal['text'],
+                    meal.text,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -88,7 +88,7 @@ class MealSummaryCard extends StatelessWidget {
                       decoration: isSkipped ? TextDecoration.lineThrough : null,
                     ),
                   ),
-                  if (isSkipped && meal['skipReason'] != null) ...[
+                  if (isSkipped && meal.skipReason != null) ...[
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -100,7 +100,7 @@ class MealSummaryCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            '스킵 이유: ${meal['skipReason']}',
+                            '스킵 이유: ${meal.skipReason}',
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
@@ -113,7 +113,7 @@ class MealSummaryCard extends StatelessWidget {
                       ],
                     ),
                   ],
-                  if (meal['lateReason'] != null) ...[
+                  if (meal.lateReason != null) ...[
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -121,7 +121,7 @@ class MealSummaryCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            '늦게 입력: ${meal['lateReason']}',
+                            '늦게 입력: ${meal.lateReason}',
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
@@ -188,60 +188,57 @@ class MealSummaryCard extends StatelessWidget {
   Widget _buildUnrecordedMeal() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: GestureDetector(
-        onTap: onRecordMeal,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: kLightSlate,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFCBD5E1)),
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 40,
-                child: Column(
-                  children: [
-                    Text(
-                      meal['type'],
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: kMidSlate,
-                      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: kLightSlate,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFCBD5E1)),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 40,
+              child: Column(
+                children: [
+                  Text(
+                    meal.label,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: kMidSlate,
                     ),
-                  ],
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 32,
-                color: const Color(0xFFE2E8F0),
-                margin: const EdgeInsets.symmetric(horizontal: 12),
-              ),
-              Expanded(
-                child: Text(
-                  '${meal['type']} 식단 기록하기',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: kMidSlate,
                   ),
+                ],
+              ),
+            ),
+            Container(
+              width: 1,
+              height: 32,
+              color: const Color(0xFFE2E8F0),
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+            Expanded(
+              child: Text(
+                '${meal.label} 식단 기록하기',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: kMidSlate,
                 ),
               ),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: const Icon(Icons.add, size: 16, color: kMidSlate),
+            ),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
-            ],
-          ),
+              child: const Icon(Icons.add, size: 16, color: kMidSlate),
+            ),
+          ],
         ),
       ),
     );
