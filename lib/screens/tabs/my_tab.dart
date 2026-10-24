@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
 import 'package:switchon_diet/screens/chat_history_screen.dart';
 import 'package:switchon_diet/screens/dialogs/settings_dialogs.dart';
 import 'package:switchon_diet/screens/diet_history_screen.dart';
@@ -21,7 +22,7 @@ class _MyTabState extends State<MyTab> with RouteAware {
   Widget build(BuildContext context) {
     final stats = _calculateStats();
     final userName = StorageService.getSettings()?.userName ?? '다이어터';
-    final week = ((stats.todayIdx - 1) ~/ 7 + 1).clamp(1, 4);
+    final week = ChallengeCalendar.weekOf(stats.todayIdx);
 
     return Container(
       color: kBgColor,
@@ -334,9 +335,7 @@ class _MyTabState extends State<MyTab> with RouteAware {
         '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
 
     final now = const JstClock().now();
-    final start = DateTime.parse(widget.startDate);
-    final currentDay = now.difference(start).inDays + 1;
-    final todayIdx = currentDay.clamp(1, 28);
+    final todayIdx = ChallengeCalendar.fromIsoDate(widget.startDate).dayAt(now);
 
     final allRecords = StorageService.getAllRecords();
     int totalWarnings = 0;

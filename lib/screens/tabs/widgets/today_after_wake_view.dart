@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/program/domain/meal_schedule.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/models/meal_record.dart';
 import 'package:switchon_diet/screens/dialogs/components/meal/late_reason_dialog.dart';
@@ -15,7 +16,6 @@ import 'package:switchon_diet/screens/tabs/widgets/bedtime_card.dart';
 import 'package:switchon_diet/screens/tabs/widgets/daily_missions_card.dart';
 import 'package:switchon_diet/screens/tabs/widgets/fasting_timer_card.dart';
 import 'package:switchon_diet/screens/tabs/widgets/top_info_card.dart';
-import 'package:switchon_diet/services/meal_timing_service.dart';
 import 'package:switchon_diet/services/storage_service.dart';
 
 /// The main view shown after the user has recorded their wake time.
@@ -144,9 +144,9 @@ class TodayAfterWakeView extends StatelessWidget {
     int index,
     MealRecord meal,
   ) async {
-    final recommendedTime = MealTimingService.getRecommendedMealTime(
-      wakeTimeIso: record.wakeTime!,
-      mealLabel: meal.label,
+    final recommendedTime = MealSchedule.recommendedTime(
+      wakeTime: Jst.parse(record.wakeTime!),
+      label: meal.label,
     );
 
     final selectedTime = await showMissedMealTimeDialog(
@@ -285,9 +285,10 @@ class TodayAfterWakeView extends StatelessWidget {
       if (meal.checked || meal.skipped) continue;
 
       // 시간이 지났는지 확인
-      final isPassed = MealTimingService.isMealTimePassed(
-        wakeTimeIso: record.wakeTime!,
-        mealLabel: meal.label,
+      final isPassed = MealSchedule.isWindowPassed(
+        wakeTime: wake,
+        label: meal.label,
+        now: const JstClock().now(),
       );
 
       if (!isPassed) {
@@ -348,9 +349,10 @@ class TodayAfterWakeView extends StatelessWidget {
                 final isMissed =
                     !meal.checked &&
                     !meal.skipped &&
-                    MealTimingService.isMealTimePassed(
-                      wakeTimeIso: record.wakeTime!,
-                      mealLabel: meal.label,
+                    MealSchedule.isWindowPassed(
+                      wakeTime: wake,
+                      label: meal.label,
+                      now: const JstClock().now(),
                     );
 
                 // isNext는 시간 안 지난 첫 번째 미완료 식사

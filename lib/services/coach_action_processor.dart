@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:switchon_diet/constants/meal_offsets.dart';
 import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/program/domain/meal_schedule.dart';
 import 'package:switchon_diet/models/coach_action.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/models/meal_record.dart';
@@ -64,7 +64,9 @@ class CoachActionProcessor {
         record = DietRecord(
           date: dateStr,
           wakeTime: wakeTimeIso,
-          meals: mealOffsets.map((m) => MealRecord(label: m.label)).toList(),
+          meals: MealSchedule.slots
+              .map((m) => MealRecord(label: m.label))
+              .toList(),
         );
       } else {
         record.wakeTime = wakeTimeIso;

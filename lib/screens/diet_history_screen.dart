@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/screens/diet_history/widgets/diet_history_day_card.dart';
 import 'package:switchon_diet/screens/past_date_meal_selection_screen.dart';
@@ -148,7 +149,7 @@ class _DietHistoryScreenState extends State<DietHistoryScreen> {
   }
 
   int _getWeek(int dayIdx) {
-    return ((dayIdx - 1) ~/ 7 + 1).clamp(1, 4);
+    return ChallengeCalendar.weekOf(dayIdx);
   }
 
   @override

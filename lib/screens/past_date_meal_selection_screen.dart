@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/meal_offsets.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/program/domain/meal_schedule.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/models/meal_record.dart';
 import 'package:switchon_diet/screens/record_meal_screen.dart';
@@ -173,12 +173,10 @@ class _PastDateMealSelectionScreenState
 
       // Generate meals based on wake time (like today_tab does)
       final meals = <MealRecord>[];
-      for (final offset in mealOffsets) {
-        final start = wakeTime.add(Duration(minutes: offset.startMins));
-        final end = wakeTime.add(Duration(minutes: offset.endMins));
-        final guideTxt = '${Jst.hourMinute(start)} ~ ${Jst.hourMinute(end)} 예정';
-
-        meals.add(MealRecord(label: offset.label, guideText: guideTxt));
+      for (final slot in MealSchedule.slots) {
+        final start = Jst.hourMinute(slot.startAfter(wakeTime));
+        final end = Jst.hourMinute(slot.endAfter(wakeTime));
+        meals.add(MealRecord(label: slot.label, guideText: '$start ~ $end 예정'));
       }
 
       // Create or update record

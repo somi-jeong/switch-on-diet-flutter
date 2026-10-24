@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
+import 'package:switchon_diet/features/program/presentation/diet_tab.dart';
 import 'package:switchon_diet/models/app_settings.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/screens/dialogs/meal_dialogs.dart';
 import 'package:switchon_diet/screens/past_date_meal_selection_screen.dart';
 import 'package:switchon_diet/screens/tabs/calendar_tab.dart';
-import 'package:switchon_diet/screens/tabs/diet_tab.dart';
 import 'package:switchon_diet/screens/tabs/my_tab.dart';
 import 'package:switchon_diet/screens/tabs/today_tab.dart';
 import 'package:switchon_diet/screens/weekly_feedback_screen.dart';
@@ -85,11 +86,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     _checkDailyAnalysis();
 
     // Calculate today's day index
-    final startDate = DateTime.parse(_settings.startDate);
     final now = const JstClock().now();
-    final diff = now.difference(startDate).inDays + 1;
-    _todayIdx = diff.clamp(1, 28);
-    _week = ((_todayIdx - 1) ~/ 7 + 1).clamp(1, 4);
+    _todayIdx = ChallengeCalendar.fromIsoDate(_settings.startDate).dayAt(now);
+    _week = ChallengeCalendar.weekOf(_todayIdx);
 
     debugPrint('[_loadData] Today is day $_todayIdx, week $_week');
 

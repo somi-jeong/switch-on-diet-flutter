@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/jst.dart';
 import 'package:switchon_diet/core/utils/time_validator.dart';
+import 'package:switchon_diet/features/program/domain/program_phase.dart';
 
 /// The top information card shown after waking up.
 /// Displays program info, wake time (with warning if late), and completion progress.
@@ -19,28 +20,11 @@ class TopInfoCard extends StatelessWidget {
     required this.onWakeTimeEdit,
   });
 
-  /// Title and one-line guide for the program phase of [dayIdx].
-  static (String, String) phaseText(int dayIdx) {
-    if (dayIdx <= 3) {
-      return ('위장관 휴식 기간 🌿', '오늘은 단백질 쉐이크만\n하루 4번 먹는 날이에요.');
-    }
-    if (dayIdx <= 7) {
-      return ('지방 대사 활성화 🔥', '점심에만 잡곡밥을 곁들이고\n나머지는 단백질 쉐이크예요.');
-    }
-    if (dayIdx <= 14) {
-      return ('가속기 🚀', '점심은 잡곡밥 + 반찬, 저녁은\n저탄수화물 식사예요.');
-    }
-    if (dayIdx <= 21) {
-      return ('체질 전환기 🌱', '이번 주는 24시간 단식을\n주 2회 실천해요.');
-    }
-    return ('완성기 🌳', '이번 주는 24시간 단식을\n주 3회 실천해요.');
-  }
-
   @override
   Widget build(BuildContext context) {
     final wakeTimeOfDay = TimeOfDay.fromDateTime(wakeTime);
     final isWakeTimeAbnormal = TimeValidator.isWakeTimeLate(wakeTimeOfDay);
-    final (phaseTitle, phaseGuide) = phaseText(dayIdx);
+    final phase = ProgramPhase.forDay(dayIdx);
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -64,7 +48,7 @@ class TopInfoCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  phaseTitle,
+                  phase.title,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -74,7 +58,7 @@ class TopInfoCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  phaseGuide,
+                  phase.guide,
                   style: const TextStyle(
                     fontSize: 14,
                     color: kMidSlate,

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/diet_data.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
+import 'package:switchon_diet/features/program/domain/food_rules.dart';
 import 'package:switchon_diet/models/meal_record.dart';
 import 'package:switchon_diet/screens/dialogs/meal_dialogs.dart';
 import 'package:switchon_diet/screens/record_meal/widgets/ai_coach_message_card.dart';
@@ -162,17 +163,8 @@ class _RecordMealScreenState extends State<RecordMealScreen> {
         return;
       }
 
-      final startDate = DateTime.parse(settings.startDate);
-      final now = const JstClock().now();
-      final daysSinceStart = now.difference(startDate).inDays + 1;
-      final week = ((daysSinceStart - 1) ~/ 7 + 1).clamp(1, 4);
-
-      final weekAllowedKey = week <= 1
-          ? (todayIdx <= 3 ? '1-1' : '1-2')
-          : week.toString();
-      final allowed = weekAllowedMap[weekAllowedKey] ?? weekAllowedMap['1-2']!;
-      final forbidden =
-          weekForbiddenMap[weekAllowedKey] ?? weekForbiddenMap['1-2']!;
+      final week = ChallengeCalendar.weekOf(todayIdx);
+      final rules = FoodRules.forDay(todayIdx);
 
       // Call AI analysis
       final claude = ClaudeService();
@@ -180,8 +172,8 @@ class _RecordMealScreenState extends State<RecordMealScreen> {
         foodText: foodText,
         week: week,
         day: todayIdx,
-        allowedFoods: allowed,
-        forbiddenFoods: forbidden,
+        allowedFoods: rules.allowed,
+        forbiddenFoods: rules.forbidden,
       );
 
       // Save AI feedback

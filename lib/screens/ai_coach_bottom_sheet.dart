@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/diet_data.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
+import 'package:switchon_diet/features/program/domain/food_rules.dart';
 import 'package:switchon_diet/models/chat_message.dart';
 import 'package:switchon_diet/models/coach_action.dart';
 import 'package:switchon_diet/screens/ai_coach_widgets.dart';
@@ -261,14 +262,8 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
               .toList() ??
           [];
 
-      final week = ((widget.todayIdx - 1) ~/ 7 + 1).clamp(1, 4);
-      final weekAllowedKey = week <= 1
-          ? (widget.todayIdx <= 3 ? '1-1' : '1-2')
-          : week.toString();
-
-      final allowed = weekAllowedMap[weekAllowedKey] ?? weekAllowedMap['1-2']!;
-      final forbidden =
-          weekForbiddenMap[weekAllowedKey] ?? weekForbiddenMap['1-2']!;
+      final week = ChallengeCalendar.weekOf(widget.todayIdx);
+      final rules = FoodRules.forDay(widget.todayIdx);
 
       // 토큰 절약을 위해 최근 6개 메시지만 포함 (유저 3개 + AI 3개 = 대화 3턴)
       final recentMessages = _messages.length > 6
@@ -306,8 +301,8 @@ class _AiCoachBottomSheetState extends State<AiCoachBottomSheet>
         week: week,
         wakeTime: todayRecord?.wakeTime,
         mealDetails: mealDetails,
-        allowedFoods: allowed,
-        forbiddenFoods: forbidden,
+        allowedFoods: rules.allowed,
+        forbiddenFoods: rules.forbidden,
         chatHistory: chatHistory,
         yesterdaySummary: yesterdaySummary,
       );

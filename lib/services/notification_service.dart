@@ -1,7 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:switchon_diet/constants/meal_offsets.dart';
 import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/program/domain/meal_schedule.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
@@ -41,8 +41,8 @@ class NotificationService {
 
     final wake = Jst.parse(wakeTime);
 
-    for (int i = 0; i < mealOffsets.length; i++) {
-      final meal = mealOffsets[i];
+    for (var i = 0; i < MealSchedule.slots.length; i++) {
+      final meal = MealSchedule.slots[i];
 
       // 식사 시작 10분 전 알림
       final startTime = wake.add(Duration(minutes: meal.startMins));

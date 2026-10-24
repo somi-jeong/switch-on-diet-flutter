@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:switchon_diet/constants/diet_data.dart';
 import 'package:switchon_diet/core/time/clock.dart';
+import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
+import 'package:switchon_diet/features/program/domain/food_rules.dart';
 import 'package:switchon_diet/models/chat_message.dart';
 import 'package:switchon_diet/screens/chat_detail/widgets/chat_detail_widgets.dart';
 import 'package:switchon_diet/services/claude_service.dart';
@@ -115,14 +116,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           [];
 
       // Calculate week and get diet plan
-      final week = ((widget.day - 1) ~/ 7 + 1).clamp(1, 4);
-      final weekAllowedKey = week <= 1
-          ? (widget.day <= 3 ? '1-1' : '1-2')
-          : week.toString();
-
-      final allowed = weekAllowedMap[weekAllowedKey] ?? weekAllowedMap['1-2']!;
-      final forbidden =
-          weekForbiddenMap[weekAllowedKey] ?? weekForbiddenMap['1-2']!;
+      final week = ChallengeCalendar.weekOf(widget.day);
+      final rules = FoodRules.forDay(widget.day);
 
       // Prepare chat history
       final chatHistory = _msgs
@@ -138,8 +133,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         week: week,
         wakeTime: todayRecord?.wakeTime,
         mealDetails: mealDetails,
-        allowedFoods: allowed,
-        forbiddenFoods: forbidden,
+        allowedFoods: rules.allowed,
+        forbiddenFoods: rules.forbidden,
         chatHistory: chatHistory,
       );
 

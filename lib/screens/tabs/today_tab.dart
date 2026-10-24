@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:switchon_diet/constants/meal_offsets.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/core/time/clock.dart';
 import 'package:switchon_diet/core/time/jst.dart';
+import 'package:switchon_diet/features/program/domain/challenge_calendar.dart';
+import 'package:switchon_diet/features/program/domain/meal_schedule.dart';
 import 'package:switchon_diet/models/app_settings.dart';
 import 'package:switchon_diet/models/diet_record.dart';
 import 'package:switchon_diet/models/meal_record.dart';
@@ -44,11 +45,9 @@ class _TodayTabState extends ConsumerState<TodayTab> {
       return;
     }
     _settings = settings;
-    final startDate = DateTime.parse(settings.startDate);
     final now = const JstClock().now();
-    final diff = now.difference(startDate).inDays + 1;
-    _todayIdx = diff.clamp(1, 28);
-    _week = ((_todayIdx - 1) ~/ 7 + 1).clamp(1, 4);
+    _todayIdx = ChallengeCalendar.fromIsoDate(settings.startDate).dayAt(now);
+    _week = ChallengeCalendar.weekOf(_todayIdx);
     var record = StorageService.getRecord(_todayIdx);
     if (record == null) {
       record = DietRecord(date: Jst.isoDate(now), meals: []);
@@ -62,38 +61,10 @@ class _TodayTabState extends ConsumerState<TodayTab> {
 
   Future<void> _saveWakeTime(DateTime wakeTime) async {
     if (_record == null) return;
-    final meals = <MealRecord>[];
-    final wakeHour = wakeTime.hour;
-
-    // 기상 시간에 따라 현실적으로 가능한 식사만 표시
-    // 정상 (05:00~09:00): 4끼 전부
-    // 약간 늦음 (09:00~11:00): 3끼 (아침 제외)
-    // 상당히 늦음 (11:00~14:00): 2끼 (점심, 저녁)
-    // 매우 늦음 (14:00~17:00): 1끼 (저녁)
-    // 완전 비정상 (17:00~): 식사 진행 불가
-
-    for (final m in mealOffsets) {
-      bool shouldInclude = true;
-
-      if (wakeHour >= 17) {
-        // 17시 이후: 모든 식사 불가
-        shouldInclude = false;
-      } else if (wakeHour >= 14) {
-        // 14~17시: 저녁만 가능
-        shouldInclude = m.label == '저녁';
-      } else if (wakeHour >= 11) {
-        // 11~14시: 점심, 저녁만 가능
-        shouldInclude = m.label == '점심' || m.label == '저녁';
-      } else if (wakeHour >= 9) {
-        // 09~11시: 점심, 간식, 저녁 가능 (아침 제외)
-        shouldInclude = m.label != '아침';
-      }
-      // else: 05~09시는 모든 식사 가능
-
-      if (shouldInclude) {
-        meals.add(MealRecord(label: m.label));
-      }
-    }
+    final meals = [
+      for (final slot in MealSchedule.slotsForWakeHour(wakeTime.hour))
+        MealRecord(label: slot.label),
+    ];
 
     final updated = DietRecord(
       date: _record!.date,

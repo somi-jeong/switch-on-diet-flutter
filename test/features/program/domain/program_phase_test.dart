@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:switchon_diet/screens/tabs/widgets/top_info_card.dart';
+import 'package:switchon_diet/features/program/domain/program_phase.dart';
 
 void main() {
   test('phase card text follows the program phase boundaries', () {
-    String title(int day) => TopInfoCard.phaseText(day).$1;
+    String title(int day) => ProgramPhase.forDay(day).title;
 
     expect(title(1), title(3));
     expect(title(4), isNot(title(3)));
