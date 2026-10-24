@@ -6,11 +6,11 @@
 
 <p align="center">
   A Flutter app for the 28-day <b>Switch-On Diet</b> challenge: meal windows timed from when you wake up,
-  a live fasting timer, a week-by-week food guide, and an AI coach built on the Claude API.
+  a live fasting timer, a week-by-week food guide, and an LLM-powered AI coach.
 </p>
 
 <p align="center">
-  <a href="#english">English</a> · <a href="#한국어">한국어</a> · <a href="#日本語">日本語</a>
+  <b>English</b> · <a href="README.ko.md">한국어</a>
 </p>
 
 <p align="center">
@@ -23,9 +23,7 @@
 
 ---
 
-## English
-
-### Why
+## Why
 
 The Switch-On Diet is a 4-week program with strict rules: 14 hours of fasting between dinner and breakfast,
 four meals at fixed offsets from waking, a list of allowed foods that grows each week, and 24-hour fasts in
@@ -34,7 +32,7 @@ checks each meal against the current week's rules, and adds a coach that knows w
 
 The UI is in Korean, and all times are calculated in JST (Asia/Tokyo).
 
-### Features
+## Features
 
 **Today**
 - **Phase card**: a title and one-line guide for the current phase of the plan, plus the day's achievement rate.
@@ -61,7 +59,7 @@ The UI is in Korean, and all times are calculated in JST (Asia/Tokyo).
 - AI coach history with daily feedback and weekly summary cards.
 - Settings for display name and challenge start date, plus a full data reset.
 
-**AI coach (Claude API)**
+**AI coach**
 - A chat sheet that opens with a greeting built locally from today's state (missing meals, unchecked
   missions, yesterday's score), so it works before any API call. Suggested-question chips are included.
 - Each request includes the current day and week, the meal status, the week's allowed and forbidden
@@ -71,7 +69,7 @@ The UI is in Korean, and all times are calculated in JST (Asia/Tokyo).
 - **Automatic reviews**: a daily feedback runs between 23:00 and 23:59, and a weekly summary runs between 17:00 and 19:00 on days 7, 14, 21 and 28.
   Both are triggered when the app opens or resumes, so no server is needed.
 
-### Architecture
+## Architecture
 
 The app follows MVVM on top of a Clean Architecture split. Code is grouped by feature, and every
 feature has up to three layers:
@@ -97,7 +95,7 @@ flowchart LR
     end
     subgraph data["data"]
         Repos["Repository implementations"]
-        Sources["Hive boxes · AnthropicRemoteDataSource<br/>ClaudePromptBuilder · ClaudeResponseParser"]
+        Sources["Hive boxes · AnthropicRemoteDataSource<br/>CoachPromptBuilder · CoachResponseParser"]
     end
 
     View --> VM
@@ -128,7 +126,7 @@ lib/
     ├── program/               # domain: ChallengeCalendar, MealSchedule, FoodRules, ProgramPhase · diet guide tab
     ├── diet_record/           # day records: Today, Calendar, diet history, past-day backfill
     ├── meal/                  # recording a meal and its AI verdict · meal reminders
-    ├── coach/                 # AI coach chat, chat history, the Claude integration
+    ├── coach/                 # AI coach chat, chat history, the LLM integration
     ├── analysis/              # scheduled daily and weekly reviews (use cases only)
     └── settings/              # onboarding, my page, settings, reset
 ```
@@ -139,8 +137,8 @@ lib/
 2. The view model hands the form values to the `RecordMeal` use case.
 3. `RecordMeal` saves the meal through `DietRecordRepository` first, so the entry survives an AI failure,
    then asks `AiCoachRepository.analyzeMeal` for a verdict.
-4. `ClaudeAiCoachRepository` builds the prompt with `ClaudePromptBuilder`, sends it through
-   `AnthropicRemoteDataSource`, and parses the reply with `ClaudeResponseParser`. HTTP errors become
+4. `RemoteAiCoachRepository` builds the prompt with `CoachPromptBuilder`, sends it through
+   `AnthropicRemoteDataSource`, and parses the reply with `CoachResponseParser`. HTTP errors become
    typed `AiFailure`s at this boundary.
 5. The verdict is written back to the record. The Hive box emits a change, `dietRecordsProvider`
    re-emits, and every view model that watches it (Today, Calendar, history) rebuilds. No screen has to be told to refresh.
@@ -174,7 +172,7 @@ lib/
 A Korean design document is in [`docs/ARCHITECTURE.ko.md`](docs/ARCHITECTURE.ko.md).
 The diet rules the app encodes are summarised in [`docs/DIET_PROGRAM.ko.md`](docs/DIET_PROGRAM.ko.md).
 
-### Tech stack
+## Tech stack
 
 | Area | Choice |
 |---|---|
@@ -183,20 +181,20 @@ The diet rules the app encodes are summarised in [`docs/DIET_PROGRAM.ko.md`](doc
 | State / DI | flutter_riverpod 2.x (`Notifier`, `AsyncNotifier`, provider overrides) |
 | Models | freezed (entities, view states, sealed unions) |
 | Local storage | hive · hive_flutter · hive_generator + build_runner |
-| AI | Anthropic Messages API over `http` (model `claude-haiku-4-5`) |
+| AI | Anthropic Messages API over `http` |
 | Time | timezone (fixed Asia/Tokyo) · intl |
 | Notifications | flutter_local_notifications. It is initialised at startup, and a meal-reminder scheduler is implemented in `MealReminderService` but not yet connected to the UI. |
 | Config | `--dart-define` or flutter_dotenv (`.env`) |
 | i18n | flutter_localizations (`ko_KR`) |
 | Quality | flutter_lints plus strict analyzer modes · unit tests · layer-rule check |
 
-### Notable engineering decisions
+## Notable engineering decisions
 
 - **Meal times are offsets from waking, not fixed clock times.** `MealSchedule` defines each meal window
   as minutes after waking. Timeline cards, recommended times and the missed-meal states are all calculated from that one table.
 - **Achievement is fair to late days.** A late wake-up only creates the meals that still fit in the day, and
   `DietRecord.score` ignores skipped meals. Your rate reflects the meals you could actually have eaten.
-- **The chat also logs records.** The system prompt asks Claude to add tags like `<ACTION>MEAL:아침:계란, 샐러드</ACTION>`
+- **The chat also logs records.** The system prompt asks the model to add tags like `<ACTION>MEAL:아침:계란, 샐러드</ACTION>`
   to its reply. `CoachActionParser` turns the tags into a sealed `CoachAction` list and removes them from the
   visible text, and the `ApplyCoachActions` use case saves the wake, meal, skip or sleep events.
 - **Parsing tolerates loose output.** Meal verdicts are read from `STATUS:`/`FEEDBACK:` lines.
@@ -213,7 +211,7 @@ The diet rules the app encodes are summarised in [`docs/DIET_PROGRAM.ko.md`](doc
   and redundant null checks are analyzer *errors*. Files stay under 500 lines, and `scripts/check_quality.sh`
   also checks the layer dependency rule (see [`docs/CODING_GUIDELINES.md`](docs/CODING_GUIDELINES.md)).
 
-### Getting started
+## Getting started
 
 Requirements: **Flutter 3.35+** (Dart 3.8+), Xcode for iOS, or Android Studio for Android.
 
@@ -240,7 +238,7 @@ flutter run --dart-define=ANTHROPIC_API_KEY=sk-ant-...
 
 iOS is the main target. The web build also runs (Hive uses IndexedDB), and the screenshots above were taken from it.
 
-### Project structure
+## Project structure
 
 ```
 lib/
@@ -256,7 +254,7 @@ docs/                          # architecture, decisions, coding guidelines, die
 scripts/                       # check_quality.sh, format_all.sh
 ```
 
-### Testing
+## Testing
 
 ```bash
 flutter analyze   # no issues
@@ -273,42 +271,9 @@ make check        # analyze + file size + layer dependency rule
 There are no widget tests yet. Views only lay out state, and the logic behind them is tested through
 the view models.
 
-### License
+## License
 
 [MIT](LICENSE) © 2026 Somi Jeong
 
 > This project is not affiliated with the creators of the Switch-On Diet program and does not give medical advice.
 
----
-
-## 한국어
-
-**스위치온 다이어트**는 4주(28일) 챌린지를 따라가기 위한 Flutter 앱입니다.
-
-- 기상 시간을 입력하면 아침·점심·간식·저녁의 식사 시간대가 자동으로 계산됩니다. 늦게 일어난 날은 남은 시간에 가능한 끼니만 만들어집니다.
-- 공복 타이머로 14시간 목표를 확인하고, 데일리 미션(물·영양제·운동·수면)을 체크할 수 있습니다.
-- 먹은 음식을 텍스트로 기록하면 Claude API가 이번 주 규칙을 기준으로 `허용 / 주의 / 금지`를 판정하고 한 줄 피드백을 줍니다.
-- 28일 캘린더, 주차별 식단 가이드, 식단·수면 기록, AI 코치 히스토리를 제공합니다.
-- AI 코치에게 "7시에 일어났어요"처럼 말하면 그 내용이 기록으로 저장됩니다(`<ACTION>` 태그 방식).
-- 하루 피드백(23시)과 주간 요약(7·14·21·28일차)은 앱을 열 때 자동으로 생성됩니다.
-- 모든 데이터는 기기의 Hive에만 저장되고, API 키는 `--dart-define=ANTHROPIC_API_KEY=...`로 주입합니다.
-
-실행 방법: `cp .env.example .env && flutter pub get && flutter run --dart-define=ANTHROPIC_API_KEY=...` (Flutter 3.35 이상)
-설계 문서는 [`docs/ARCHITECTURE.ko.md`](docs/ARCHITECTURE.ko.md)에 있습니다.
-
----
-
-## 日本語
-
-**Switch-On Diet** は、4週間（28日間）のダイエットプログラムを実践するための Flutter アプリです。
-
-- 起床時刻を記録すると、朝食・昼食・間食・夕食の時間帯が自動で計算されます。起床が遅れた日は、残り時間で可能な食事だけが作られます。
-- 断食タイマーで14時間の目標を確認でき、デイリーミッション（水・サプリ・運動・睡眠）もチェックできます。
-- 食べたものをテキストで記録すると、Claude API がその週のルールに沿って「許可 / 注意 / 禁止」を判定し、一言コメントを返します。
-- 28日カレンダー、週ごとの食事ガイド、食事・睡眠の履歴、AI コーチの履歴を備えています。
-- AI コーチに「7時に起きた」と話すと、その内容が記録として保存されます（`<ACTION>` タグ方式）。
-- 日次フィードバック（23時台）と週次サマリー（7・14・21・28日目）は、アプリを開いたときに自動で生成されます。
-- データはすべて端末内の Hive に保存されます。API キーは `--dart-define=ANTHROPIC_API_KEY=...` で渡します。
-
-実行方法：`cp .env.example .env && flutter pub get && flutter run --dart-define=ANTHROPIC_API_KEY=...`（Flutter 3.35 以上）
-UI は韓国語で、時刻はすべて日本時間（JST）で扱います。
