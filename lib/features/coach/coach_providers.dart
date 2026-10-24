@@ -3,8 +3,8 @@ import 'package:hive/hive.dart';
 import 'package:switchon_diet/core/di/core_providers.dart';
 import 'package:switchon_diet/features/coach/data/datasources/anthropic_remote_data_source.dart';
 import 'package:switchon_diet/features/coach/data/datasources/chat_local_data_source.dart';
-import 'package:switchon_diet/features/coach/data/repositories/claude_ai_coach_repository.dart';
 import 'package:switchon_diet/features/coach/data/repositories/hive_chat_repository.dart';
+import 'package:switchon_diet/features/coach/data/repositories/remote_ai_coach_repository.dart';
 import 'package:switchon_diet/features/coach/domain/repositories/ai_coach_repository.dart';
 import 'package:switchon_diet/features/coach/domain/repositories/chat_repository.dart';
 import 'package:switchon_diet/features/coach/domain/usecases/apply_coach_actions.dart';
@@ -31,7 +31,7 @@ final chatRepositoryProvider = Provider<ChatRepository>(
 );
 
 final aiCoachRepositoryProvider = Provider<AiCoachRepository>(
-  (ref) => ClaudeAiCoachRepository(
+  (ref) => RemoteAiCoachRepository(
     AnthropicRemoteDataSource(
       client: ref.watch(httpClientProvider),
       apiKey: ref.watch(anthropicApiKeyProvider),

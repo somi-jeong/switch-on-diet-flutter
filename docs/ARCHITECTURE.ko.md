@@ -1,7 +1,7 @@
 # 스위치온 다이어트 앱 설계 문서
 
 28일(4주) 스위치온 다이어트 챌린지를 기록하고 AI 코칭을 받는 Flutter 앱입니다.
-데이터는 모두 기기(Hive)에 저장되고, 외부와 통신하는 것은 Claude API 호출뿐입니다.
+데이터는 모두 기기(Hive)에 저장되고, 외부와 통신하는 것은 AI API(Anthropic) 호출뿐입니다.
 
 ## 1. 구조 한눈에 보기
 
@@ -35,7 +35,7 @@ lib/
     ├── program/              # 프로그램 규칙: ChallengeCalendar, MealSchedule, FoodRules, ProgramPhase + 식단 탭
     ├── diet_record/          # 하루 기록: 오늘 탭, 캘린더, 식단·수면 기록, 지난 날짜 입력
     ├── meal/                 # 식사 기록과 AI 판정, 식사 알림
-    ├── coach/                # AI 코치 대화, 코치 히스토리, Claude 연동(data)
+    ├── coach/                # AI 코치 대화, 코치 히스토리, AI API 연동(data)
     ├── analysis/             # 하루 피드백·주간 요약 자동 생성(유스케이스만 있음)
     └── settings/             # 온보딩, 마이 페이지, 설정 변경, 초기화
 ```
@@ -64,10 +64,10 @@ lib/
 1. `RecordMealScreen` → `RecordMealViewModel.save()`
 2. `RecordMeal` 유스케이스가 먼저 `DietRecordRepository`에 식사를 저장합니다. AI가 실패해도 기록은 남깁니다.
 3. 이어서 `AiCoachRepository.analyzeMeal`을 호출합니다.
-4. `ClaudeAiCoachRepository`가 다음 순서로 처리합니다.
-   - `ClaudePromptBuilder`: 프롬프트 생성
+4. `RemoteAiCoachRepository`가 다음 순서로 처리합니다.
+   - `CoachPromptBuilder`: 프롬프트 생성
    - `AnthropicRemoteDataSource`: HTTP 요청. HTTP 오류는 여기서 `AiFailure`로 바꿉니다.
-   - `ClaudeResponseParser`: `STATUS`/`FEEDBACK` 파싱. 형식이 맞지 않으면 키워드로 판정하고, 그래도 안 되면 기본값을 씁니다.
+   - `CoachResponseParser`: `STATUS`/`FEEDBACK` 파싱. 형식이 맞지 않으면 키워드로 판정하고, 그래도 안 되면 기본값을 씁니다.
 5. 판정을 기록에 다시 저장하면 Hive 변경 → `dietRecordsProvider` → 오늘 탭 순서로 화면이 갱신됩니다.
 6. View는 `RecordMealOutcome`을 보고 스낵바나 에러 다이얼로그를 띄웁니다.
 

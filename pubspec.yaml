@@ -1,5 +1,5 @@
 name: switchon_diet
-description: "28-day Switch-On Diet challenge tracker with meal-window timing, fasting timer and a Claude-powered AI coach."
+description: "28-day Switch-On Diet challenge tracker with meal-window timing, fasting timer and an LLM-powered AI coach."
 publish_to: 'none'
 
 version: 1.0.0+1

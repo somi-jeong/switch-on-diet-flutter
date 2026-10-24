@@ -1,19 +1,19 @@
 import 'package:switchon_diet/features/coach/data/datasources/anthropic_remote_data_source.dart';
-import 'package:switchon_diet/features/coach/data/parsers/claude_response_parser.dart';
 import 'package:switchon_diet/features/coach/data/parsers/coach_action_parser.dart';
-import 'package:switchon_diet/features/coach/data/prompts/claude_prompt_builder.dart';
+import 'package:switchon_diet/features/coach/data/parsers/coach_response_parser.dart';
+import 'package:switchon_diet/features/coach/data/prompts/coach_prompt_builder.dart';
 import 'package:switchon_diet/features/coach/domain/entities/chat_message.dart';
 import 'package:switchon_diet/features/coach/domain/entities/coach_action.dart';
 import 'package:switchon_diet/features/coach/domain/entities/coach_requests.dart';
 import 'package:switchon_diet/features/coach/domain/repositories/ai_coach_repository.dart';
 import 'package:switchon_diet/features/program/domain/food_rules.dart';
 
-/// [AiCoachRepository] backed by Claude.
+/// [AiCoachRepository] backed by the Anthropic Messages API.
 ///
 /// Each feature gets its own token budget: a meal verdict needs two short
 /// lines, a weekly summary several paragraphs.
-class ClaudeAiCoachRepository implements AiCoachRepository {
-  ClaudeAiCoachRepository(this._remote);
+class RemoteAiCoachRepository implements AiCoachRepository {
+  RemoteAiCoachRepository(this._remote);
 
   static const mealAnalysisMaxTokens = 500;
   static const chatMaxTokens = 2000;
@@ -30,10 +30,10 @@ class ClaudeAiCoachRepository implements AiCoachRepository {
     required FoodRules foodRules,
   }) async {
     final text = await _remote.createMessage(
-      system: ClaudePromptBuilder.textAnalysisSystem(),
+      system: CoachPromptBuilder.textAnalysisSystem(),
       messages: [
         AnthropicMessage.user(
-          ClaudePromptBuilder.textAnalysisUser(
+          CoachPromptBuilder.textAnalysisUser(
             foodText: foodText,
             week: week,
             day: day,
@@ -45,7 +45,7 @@ class ClaudeAiCoachRepository implements AiCoachRepository {
       maxTokens: mealAnalysisMaxTokens,
       temperature: 0.2,
     );
-    return ClaudeResponseParser.parseMealAnalysis(text);
+    return CoachResponseParser.parseMealAnalysis(text);
   }
 
   @override
@@ -55,8 +55,8 @@ class ClaudeAiCoachRepository implements AiCoachRepository {
     required List<ChatMessage> history,
   }) async {
     final text = await _remote.createMessage(
-      system: ClaudePromptBuilder.coachChatSystem(context),
-      messages: ClaudeResponseParser.buildChatMessages(
+      system: CoachPromptBuilder.coachChatSystem(context),
+      messages: CoachResponseParser.buildChatMessages(
         currentMessage: message,
         history: history,
       ),
@@ -67,9 +67,9 @@ class ClaudeAiCoachRepository implements AiCoachRepository {
 
   @override
   Future<String> dailyFeedback(DailyReport report) => _remote.createMessage(
-    system: ClaudePromptBuilder.dailyFeedbackSystem(),
+    system: CoachPromptBuilder.dailyFeedbackSystem(),
     messages: [
-      AnthropicMessage.user(ClaudePromptBuilder.dailyFeedbackUser(report)),
+      AnthropicMessage.user(CoachPromptBuilder.dailyFeedbackUser(report)),
     ],
     maxTokens: dailyFeedbackMaxTokens,
   );
@@ -79,12 +79,12 @@ class ClaudeAiCoachRepository implements AiCoachRepository {
     required int week,
     required List<WeeklyDayReport> days,
   }) {
-    final data = ClaudeResponseParser.buildWeeklyData(days);
+    final data = CoachResponseParser.buildWeeklyData(days);
     return _remote.createMessage(
-      system: ClaudePromptBuilder.weeklySummarySystem(week: week),
+      system: CoachPromptBuilder.weeklySummarySystem(week: week),
       messages: [
         AnthropicMessage.user(
-          ClaudePromptBuilder.weeklySummaryUser(
+          CoachPromptBuilder.weeklySummaryUser(
             week: week,
             summary: data.summary,
             violations: data.violations,

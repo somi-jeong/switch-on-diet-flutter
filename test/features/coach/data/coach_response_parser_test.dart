@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:switchon_diet/features/coach/data/parsers/claude_response_parser.dart';
+import 'package:switchon_diet/features/coach/data/parsers/coach_response_parser.dart';
 import 'package:switchon_diet/features/coach/domain/entities/chat_message.dart';
 import 'package:switchon_diet/features/coach/domain/entities/coach_requests.dart';
 import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.dart';
@@ -8,7 +8,7 @@ import 'package:switchon_diet/features/diet_record/domain/entities/meal_verdict.
 void main() {
   group('parseMealAnalysis', () {
     test('reads STATUS / FEEDBACK lines', () {
-      final result = ClaudeResponseParser.parseMealAnalysis(
+      final result = CoachResponseParser.parseMealAnalysis(
         'STATUS: warning\nFEEDBACK: 양을 조금 줄여보세요\n',
       );
 
@@ -23,11 +23,11 @@ void main() {
 
     test('falls back to keyword detection', () {
       expect(
-        ClaudeResponseParser.parseMealAnalysis('이건 금지 식품입니다').verdict,
+        CoachResponseParser.parseMealAnalysis('이건 금지 식품입니다').verdict,
         MealVerdict.forbidden,
       );
       expect(
-        ClaudeResponseParser.parseMealAnalysis('괜찮아요').verdict,
+        CoachResponseParser.parseMealAnalysis('괜찮아요').verdict,
         MealVerdict.allowed,
       );
     });
@@ -36,7 +36,7 @@ void main() {
   test(
     'buildWeeklyData lists violations, late records and missed missions',
     () {
-      final data = ClaudeResponseParser.buildWeeklyData(const [
+      final data = CoachResponseParser.buildWeeklyData(const [
         WeeklyDayReport(
           day: 1,
           meals: [
@@ -69,7 +69,7 @@ void main() {
   );
 
   test('buildChatMessages appends the new message to the history', () {
-    final messages = ClaudeResponseParser.buildChatMessages(
+    final messages = CoachResponseParser.buildChatMessages(
       currentMessage: '오늘 뭐 먹을까요?',
       history: const [
         ChatMessage(role: ChatRole.assistant, text: '안녕하세요', timestamp: ''),

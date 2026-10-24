@@ -212,7 +212,7 @@ class ApiErrorDialog extends StatelessWidget {
           icon: '💳',
           iconBgColor: kRose50,
           title: 'API 크레딧 부족',
-          message: 'Claude API 사용량이 부족합니다.\n\nAPI 키 계정을 확인해주세요.',
+          message: 'AI API 사용량이 부족합니다.\n\nAPI 키 계정을 확인해주세요.',
         );
 
       case ApiErrorType.serverError:
@@ -220,7 +220,7 @@ class ApiErrorDialog extends StatelessWidget {
           icon: '🔧',
           iconBgColor: kAmber50,
           title: '일시적인 시스템 오류',
-          message: 'Claude 서버에 일시적인 문제가\n발생했습니다.\n\n잠시 후 다시 시도해주세요.',
+          message: 'AI 서버에 일시적인 문제가\n발생했습니다.\n\n잠시 후 다시 시도해주세요.',
         );
 
       case ApiErrorType.networkError:

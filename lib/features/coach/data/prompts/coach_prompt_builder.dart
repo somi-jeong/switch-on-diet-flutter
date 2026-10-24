@@ -4,7 +4,7 @@ import 'package:switchon_diet/features/diet_record/domain/entities/meal_record.d
 import 'package:switchon_diet/features/program/domain/meal_schedule.dart';
 
 /// Builds the system and user prompts for each AI feature.
-abstract final class ClaudePromptBuilder {
+abstract final class CoachPromptBuilder {
   // ── Text Analysis Prompt ─────────────────────────────────
   static String textAnalysisSystem() =>
       '당신은 스위치온 다이어트 식품 분석 AI입니다. STATUS와 FEEDBACK 두 줄만 출력하세요.';

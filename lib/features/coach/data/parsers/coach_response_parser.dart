@@ -18,7 +18,7 @@ typedef WeeklyPromptData = ({
 /// Parsing is deliberately forgiving: a reply that ignores the requested
 /// format degrades to a keyword match and then to a safe default instead of
 /// failing the request.
-abstract final class ClaudeResponseParser {
+abstract final class CoachResponseParser {
   static final _status = RegExp(
     r'STATUS:\s*(ALLOWED|WARNING|FORBIDDEN)',
     caseSensitive: false,
