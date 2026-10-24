@@ -12,7 +12,7 @@ class CalendarTab extends StatefulWidget {
   final String startDate;
   final int todayIdx;
   final Map<int, DietRecord> records;
-  final Function(int dayIdx)? onDateTap;
+  final ValueChanged<int>? onDateTap;
   final VoidCallback? onRecordMeal;
 
   const CalendarTab({

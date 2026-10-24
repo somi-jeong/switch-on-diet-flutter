@@ -8,7 +8,7 @@ import 'package:switchon_diet/features/diet_record/presentation/today/widgets/sl
 /// Includes water intake, supplements, workout, and sleep tracking.
 class DailyMissionsCard extends StatelessWidget {
   final DietRecord? record;
-  final Function(String mission) onToggleMission;
+  final ValueChanged<String> onToggleMission;
 
   const DailyMissionsCard({
     super.key,

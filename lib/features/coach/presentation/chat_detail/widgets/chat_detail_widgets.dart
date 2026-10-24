@@ -1,32 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:switchon_diet/features/coach/domain/entities/chat_message.dart';
 
-class ChatDetailWidgets {
-  static const kDarkGreen = Color(0xFF1F2A24);
-  static const kMidGreen = Color(0xFF2F8F63);
-  static const kBubbleBg = Color(0xFFF0F5EF);
-  static const kBubbleBdr = Color(0xFFE0EAD0);
+const _darkGreen = Color(0xFF1F2A24);
+const _midGreen = Color(0xFF2F8F63);
+const _bubbleBg = Color(0xFFF0F5EF);
+const _bubbleBorder = Color(0xFFE0EAD0);
 
-  static String fmtTime(String iso) {
-    try {
-      final d = DateTime.parse(iso).toUtc().add(const Duration(hours: 9));
-      return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
-    } catch (_) {
-      return '';
-    }
+/// `HH:mm` in JST for a stored timestamp, or empty if it cannot be parsed.
+String _formatTime(String iso) {
+  try {
+    final d = DateTime.parse(iso).toUtc().add(const Duration(hours: 9));
+    return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+  } on FormatException {
+    return '';
   }
+}
 
-  static Widget buildHeader({
-    required BuildContext context,
-    required int day,
-    required String date,
-    required int msgCount,
-    required bool isToday,
-  }) {
+class ChatDetailHeader extends StatelessWidget {
+  const ChatDetailHeader({
+    super.key,
+    required this.day,
+    required this.date,
+    required this.messageCount,
+    required this.isToday,
+  });
+
+  final int day;
+  final String date;
+  final int messageCount;
+  final bool isToday;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [kDarkGreen, Color(0xFF2F4A38)],
+          colors: [_darkGreen, Color(0xFF2F4A38)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -73,7 +82,7 @@ class ChatDetailWidgets {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '대화 $msgCount개',
+                        '대화 $messageCount개',
                         style: TextStyle(
                           fontSize: 10,
                           color: Colors.white.withValues(alpha: 0.4),
@@ -88,7 +97,7 @@ class ChatDetailWidgets {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: kMidGreen,
+                        color: _midGreen,
                         borderRadius: BorderRadius.circular(99),
                       ),
                       child: const Text(
@@ -108,9 +117,17 @@ class ChatDetailWidgets {
       ),
     );
   }
+}
 
-  static Widget buildSummaryCard(String? daySummary) {
-    final hasSummary = daySummary != null && daySummary.isNotEmpty;
+class DaySummaryCard extends StatelessWidget {
+  const DaySummaryCard({super.key, required this.summary});
+
+  final String? summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = this.summary ?? '';
+    final hasSummary = summary.isNotEmpty;
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(12),
@@ -131,7 +148,7 @@ class ChatDetailWidgets {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: hasSummary ? kMidGreen : const Color(0xFFE65100),
+                  color: hasSummary ? _midGreen : const Color(0xFFE65100),
                   letterSpacing: 0.03,
                 ),
               ),
@@ -141,7 +158,7 @@ class ChatDetailWidgets {
                 style: TextStyle(
                   fontSize: 10,
                   color: hasSummary
-                      ? kMidGreen.withValues(alpha: 0.6)
+                      ? _midGreen.withValues(alpha: 0.6)
                       : const Color(0xFFE65100).withValues(alpha: 0.6),
                 ),
               ),
@@ -149,7 +166,7 @@ class ChatDetailWidgets {
           ),
           const SizedBox(height: 6),
           Text(
-            hasSummary ? daySummary : '아직 진행 중이에요. 하루 마감 시 요약이 생성됩니다.',
+            hasSummary ? summary : '아직 진행 중이에요. 하루 마감 시 요약이 생성됩니다.',
             style: TextStyle(
               fontSize: 12,
               height: 1.55,
@@ -162,8 +179,15 @@ class ChatDetailWidgets {
       ),
     );
   }
+}
 
-  static Widget buildDivider(String label) {
+class TimeDivider extends StatelessWidget {
+  const TimeDivider(this.label, {super.key});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -181,9 +205,16 @@ class ChatDetailWidgets {
       ),
     );
   }
+}
 
-  static Widget buildBubbleRow(ChatMessage msg, BuildContext context) {
-    final isUser = msg.isUser;
+class ChatBubble extends StatelessWidget {
+  const ChatBubble({super.key, required this.message});
+
+  final ChatMessage message;
+
+  @override
+  Widget build(BuildContext context) {
+    final isUser = message.isUser;
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
       child: Row(
@@ -192,7 +223,7 @@ class ChatDetailWidgets {
             : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isUser) ...[buildAiAvatar(), const SizedBox(width: 7)],
+          if (!isUser) ...[const _AiAvatar(), const SizedBox(width: 7)],
           Column(
             crossAxisAlignment: isUser
                 ? CrossAxisAlignment.end
@@ -207,8 +238,8 @@ class ChatDetailWidgets {
                   vertical: 9,
                 ),
                 decoration: BoxDecoration(
-                  color: isUser ? kDarkGreen : kBubbleBg,
-                  border: isUser ? null : Border.all(color: kBubbleBdr),
+                  color: isUser ? _darkGreen : _bubbleBg,
+                  border: isUser ? null : Border.all(color: _bubbleBorder),
                   borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(14),
                     topRight: const Radius.circular(14),
@@ -217,7 +248,7 @@ class ChatDetailWidgets {
                   ),
                 ),
                 child: Text(
-                  msg.text,
+                  message.text,
                   style: TextStyle(
                     fontSize: 12,
                     height: 1.55,
@@ -228,7 +259,7 @@ class ChatDetailWidgets {
               ),
               const SizedBox(height: 2),
               Text(
-                fmtTime(msg.timestamp),
+                _formatTime(message.timestamp),
                 style: const TextStyle(fontSize: 9, color: Color(0xFFBBBBBB)),
               ),
             ],
@@ -238,36 +269,25 @@ class ChatDetailWidgets {
       ),
     );
   }
+}
 
-  static Widget buildAiAvatar() {
-    return Container(
-      width: 22,
-      height: 22,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [kDarkGreen, kMidGreen],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(7),
-      ),
-      child: const Center(child: Text('🤖', style: TextStyle(fontSize: 10))),
-    );
-  }
+class TypingBubble extends StatelessWidget {
+  const TypingBubble({super.key});
 
-  static Widget buildLoadingBubble() {
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 9),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          buildAiAvatar(),
+          const _AiAvatar(),
           const SizedBox(width: 7),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
             decoration: BoxDecoration(
-              color: kBubbleBg,
-              border: Border.all(color: kBubbleBdr),
+              color: _bubbleBg,
+              border: Border.all(color: _bubbleBorder),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(14),
                 topRight: Radius.circular(14),
@@ -283,7 +303,7 @@ class ChatDetailWidgets {
                   height: 12,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(kMidGreen),
+                    valueColor: AlwaysStoppedAnimation<Color>(_midGreen),
                   ),
                 ),
                 SizedBox(width: 8),
@@ -298,19 +318,28 @@ class ChatDetailWidgets {
       ),
     );
   }
+}
 
-  static Widget buildSuggestionChips(
-    List<String> suggestionChips,
-    Function(String) onSend,
-  ) {
+class SuggestionChips extends StatelessWidget {
+  const SuggestionChips({
+    super.key,
+    required this.suggestions,
+    required this.onSelected,
+  });
+
+  final List<String> suggestions;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 36, top: 8, bottom: 12),
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
-        children: suggestionChips.map((chip) {
+        children: suggestions.map((chip) {
           return GestureDetector(
-            onTap: () => onSend(chip),
+            onTap: () => onSelected(chip),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
@@ -328,13 +357,22 @@ class ChatDetailWidgets {
       ),
     );
   }
+}
 
-  static Widget buildInputBar({
-    required BuildContext context,
-    required TextEditingController textController,
-    required bool sending,
-    required Function(String) onSend,
-  }) {
+class ChatInputBar extends StatelessWidget {
+  const ChatInputBar({
+    super.key,
+    required this.textController,
+    required this.sending,
+    required this.onSend,
+  });
+
+  final TextEditingController textController;
+  final bool sending;
+  final ValueChanged<String> onSend;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(
         12,
@@ -379,7 +417,7 @@ class ChatDetailWidgets {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: canSend ? kDarkGreen : const Color(0xFFE5E7EB),
+                    color: canSend ? _darkGreen : const Color(0xFFE5E7EB),
                     shape: BoxShape.circle,
                   ),
                   child: sending
@@ -412,6 +450,27 @@ class ChatDetailWidgets {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AiAvatar extends StatelessWidget {
+  const _AiAvatar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [_darkGreen, _midGreen],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: const Center(child: Text('🤖', style: TextStyle(fontSize: 10))),
     );
   }
 }

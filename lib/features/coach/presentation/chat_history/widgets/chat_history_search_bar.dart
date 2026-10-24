@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 
 class ChatHistorySearchBar extends StatelessWidget {
-  final Function(String) onSearchChanged;
+  final ValueChanged<String> onSearchChanged;
 
   const ChatHistorySearchBar({super.key, required this.onSearchChanged});
 

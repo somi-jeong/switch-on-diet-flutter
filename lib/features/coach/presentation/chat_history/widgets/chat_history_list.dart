@@ -6,7 +6,7 @@ import 'package:switchon_diet/features/coach/presentation/chat_history/widgets/w
 
 class ChatHistoryList extends StatelessWidget {
   final List<HistoryItem> items;
-  final Function(HistoryItem) onItemTap;
+  final ValueChanged<HistoryItem> onItemTap;
 
   const ChatHistoryList({
     super.key,
@@ -48,8 +48,8 @@ class ChatHistoryList extends StatelessWidget {
         final item = items[index];
 
         if (index == 0 ||
-            items[index - 1].type != item.type ||
-            (item.type == 'daily' && index == 0)) {
+            items[index - 1].kind != item.kind ||
+            (item.kind == HistoryKind.daily && index == 0)) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -70,14 +70,14 @@ class ChatHistoryList extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
               ],
-              item.type == 'weekly'
+              item.kind == HistoryKind.weekly
                   ? WeeklySummaryCard(item: item, onTap: () => onItemTap(item))
                   : DailyFeedbackCard(item: item, onTap: () => onItemTap(item)),
             ],
           );
         }
 
-        return item.type == 'weekly'
+        return item.kind == HistoryKind.weekly
             ? WeeklySummaryCard(item: item, onTap: () => onItemTap(item))
             : DailyFeedbackCard(item: item, onTap: () => onItemTap(item));
       },

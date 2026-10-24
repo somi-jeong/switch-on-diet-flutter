@@ -77,7 +77,7 @@ class AnthropicRemoteDataSource {
       final block = content.first! as Map<String, Object?>;
       return block['text']! as String;
     } on Object catch (e) {
-      throw UnexpectedAiFailure(statusCode: 200, message: '$e');
+      throw UnexpectedAiFailure(message: 'Unexpected response: $e');
     }
   }
 
@@ -86,14 +86,14 @@ class AnthropicRemoteDataSource {
     if (statusCode == 429 ||
         message.contains('rate limit') ||
         message.contains('too many requests')) {
-      return const RateLimitFailure();
+      return RateLimitFailure(statusCode: statusCode);
     }
     if (statusCode == 402 ||
         statusCode == 403 ||
         message.contains('credit') ||
         message.contains('quota') ||
         message.contains('insufficient')) {
-      return const CreditFailure();
+      return CreditFailure(statusCode: statusCode);
     }
     if (statusCode >= 500 && statusCode < 600) return ServerFailure(statusCode);
     return UnexpectedAiFailure(statusCode: statusCode, message: body);

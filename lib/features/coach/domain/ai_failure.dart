@@ -1,6 +1,9 @@
 /// Why a request to the AI coach failed. Thrown by [AiCoachRepository].
 sealed class AiFailure implements Exception {
   const AiFailure();
+
+  /// The HTTP status of the failed response, if there was one.
+  int? get statusCode => null;
 }
 
 final class MissingApiKeyFailure extends AiFailure {
@@ -16,22 +19,30 @@ final class NetworkFailure extends AiFailure {
 }
 
 final class RateLimitFailure extends AiFailure {
-  const RateLimitFailure();
+  const RateLimitFailure({this.statusCode});
+
+  @override
+  final int? statusCode;
 }
 
 final class CreditFailure extends AiFailure {
-  const CreditFailure();
+  const CreditFailure({this.statusCode});
+
+  @override
+  final int? statusCode;
 }
 
 final class ServerFailure extends AiFailure {
   const ServerFailure(this.statusCode);
 
+  @override
   final int statusCode;
 }
 
 final class UnexpectedAiFailure extends AiFailure {
   const UnexpectedAiFailure({this.statusCode, this.message});
 
+  @override
   final int? statusCode;
   final String? message;
 

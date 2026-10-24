@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:switchon_diet/core/theme/app_colors.dart';
 import 'package:switchon_diet/features/coach/domain/entities/chat_message.dart';
 
-/// Reusable widgets for AI coach bottom sheet
-class AiCoachWidgets {
-  static Widget buildHeader({
-    required int todayIdx,
-    required bool analyzing,
-    required Animation<double> dotAnimation,
-    required VoidCallback onClose,
-  }) {
+class CoachSheetHeader extends StatelessWidget {
+  const CoachSheetHeader({super.key, required this.onClose});
+
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
@@ -64,9 +63,16 @@ class AiCoachWidgets {
       ),
     );
   }
+}
 
-  static Widget buildBubbleRow(ChatMessage msg, BuildContext context) {
-    final isUser = msg.isUser;
+class CoachMessageBubble extends StatelessWidget {
+  const CoachMessageBubble({super.key, required this.message});
+
+  final ChatMessage message;
+
+  @override
+  Widget build(BuildContext context) {
+    final isUser = message.isUser;
     final screenWidth = MediaQuery.of(context).size.width;
 
     // AI messages: max 70% width, User messages: max 75% width
@@ -128,7 +134,7 @@ class AiCoachWidgets {
                 ],
               ),
               child: Text(
-                msg.text,
+                message.text,
                 style: TextStyle(
                   fontSize: 15,
                   height: 1.5,
@@ -142,28 +148,45 @@ class AiCoachWidgets {
       ),
     );
   }
+}
 
-  static Widget buildQuickQuestions(Function(String) onQuestionTap) {
+class CoachQuickQuestions extends StatelessWidget {
+  const CoachQuickQuestions({super.key, required this.onSelected});
+
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildQuickBtn('샐러드 드레싱은 아예 안되나요?', onQuestionTap),
+            _QuickQuestion('샐러드 드레싱은 아예 안되나요?', onSelected: onSelected),
             const SizedBox(width: 10),
-            _buildQuickBtn('너무 어지러워요', onQuestionTap),
+            _QuickQuestion('너무 어지러워요', onSelected: onSelected),
           ],
         ),
       ),
     );
   }
+}
 
-  static Widget buildInputArea({
-    required TextEditingController controller,
-    required bool sending,
-    required VoidCallback onSend,
-  }) {
+class CoachInputBar extends StatelessWidget {
+  const CoachInputBar({
+    super.key,
+    required this.controller,
+    required this.sending,
+    required this.onSend,
+  });
+
+  final TextEditingController controller;
+  final bool sending;
+  final VoidCallback onSend;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
@@ -247,33 +270,42 @@ class AiCoachWidgets {
       ),
     );
   }
+}
 
-  static Widget _buildQuickBtn(String text, Function(String) onTap) =>
-      GestureDetector(
-        onTap: () => onTap(text),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 4,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF475569),
-              letterSpacing: -0.2,
+class _QuickQuestion extends StatelessWidget {
+  const _QuickQuestion(this.text, {required this.onSelected});
+
+  final String text;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onSelected(text),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
+          ],
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF475569),
+            letterSpacing: -0.2,
           ),
         ),
-      );
+      ),
+    );
+  }
 }

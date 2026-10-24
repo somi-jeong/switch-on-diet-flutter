@@ -8,7 +8,7 @@ import 'package:switchon_diet/features/diet_record/presentation/calendar/widgets
 class CalendarGrid extends StatelessWidget {
   final int todayIdx;
   final int selectedDay;
-  final Function(int) onDaySelected;
+  final ValueChanged<int> onDaySelected;
   final Map<int, DietRecord>? records;
   final String? startDate;
 

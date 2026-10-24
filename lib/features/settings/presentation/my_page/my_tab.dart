@@ -186,7 +186,7 @@ class MyTab extends ConsumerWidget {
                     context,
                     'AI 코치 히스토리',
                     null,
-                    () => _navigateToChatHistory(context, todayIdx),
+                    () => _navigateToChatHistory(context),
                     icon: Icons.history,
                   ),
                   _buildSettingItem(
@@ -323,13 +323,10 @@ class MyTab extends ConsumerWidget {
     );
   }
 
-  void _navigateToChatHistory(BuildContext context, int todayIdx) {
+  void _navigateToChatHistory(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) =>
-            ChatHistoryScreen(startDate: startDate, todayIdx: todayIdx),
-      ),
+      MaterialPageRoute<void>(builder: (_) => const ChatHistoryScreen()),
     );
   }
 

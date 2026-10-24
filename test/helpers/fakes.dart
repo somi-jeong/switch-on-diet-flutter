@@ -156,9 +156,11 @@ ProviderContainer createContainer({
   AppSettings? settings = const AppSettings(startDate: '2026-03-01'),
   AiCoachRepository? coach,
   ChatRepository? chats,
+  List<Override> overrides = const [],
 }) {
   final container = ProviderContainer(
     overrides: [
+      ...overrides,
       clockProvider.overrideWithValue(clock),
       dietRecordRepositoryProvider.overrideWithValue(records),
       settingsRepositoryProvider.overrideWithValue(
